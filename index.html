@@ -2310,7 +2310,8 @@ async function buildBackupFile(){
     if(!(window.crypto&&crypto.subtle)) throw new Error('Bu tarayıcı şifrelemeyi desteklemiyor');
     backup=await encryptBackup(backup,pass);
   }
-  const tarih=new Date().toLocaleDateString('tr-TR').replace(/\./g,'-');
+  const _n=new Date(), _p=x=>String(x).padStart(2,'0');
+  const tarih=`${_p(_n.getDate())}-${_p(_n.getMonth()+1)}-${_n.getFullYear()}_${_p(_n.getHours())}${_p(_n.getMinutes())}`;
   const name=`finans_yedek_${tarih}${pass?'_sifreli':''}.json`;
   return {blob:new Blob([JSON.stringify(backup,null,2)],{type:'application/json'}),name,count:snapshots.length,enc:!!pass};
 }
@@ -2319,7 +2320,7 @@ async function shareBackup(){
   let r; try{ r=await buildBackupFile(); }catch(e){ _backupMsg('✗ '+e.message,false); return; }
   if(!navigator.share){ _backupMsg('ℹ️ Bu tarayıcı paylaşmayı desteklemiyor, dosya indirildi.',true); exportBackup(r); return; }
   // Android Chrome bazı dosya türlerini paylaşmaz; sırayla farklı türleri dene
-  const types=['application/json','text/plain'];
+  const types=['application/json','text/plain']; let lastErr='';
   for(const t of types){
     try{
       const file=new File([r.blob],r.name,{type:t});
@@ -2330,6 +2331,7 @@ async function shareBackup(){
       return;
     }catch(e){
       if(e&&e.name==='AbortError') return; // kullanıcı vazgeçti
+      lastErr=(e&&e.name)||String(e);
     }
   }
   // Dosya paylaşımı olmadı: yedeği metin olarak paylaşmayı dene
@@ -2339,8 +2341,8 @@ async function shareBackup(){
     markBackup(); _backupMsg('✓ Yedek metin olarak paylaşıldı. Alıcıda .json dosyası olarak kaydedin.',true);
     try{renderAll();}catch(e){}
     return;
-  }catch(e){ if(e&&e.name==='AbortError') return; }
-  _backupMsg('ℹ️ Paylaşım açılamadı, dosya indirildi.',true);
+  }catch(e){ if(e&&e.name==='AbortError') return; lastErr=lastErr||((e&&e.name)||String(e)); }
+  _backupMsg('ℹ️ Paylaşım açılamadı, dosya indirildi. (Sebep: '+(lastErr||'dosya paylaşımı desteklenmiyor')+')',true);
   exportBackup(r);
 }
 async function exportBackup(pre){
