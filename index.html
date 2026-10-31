@@ -860,7 +860,7 @@ function togglePrivacy(){
   try{ localStorage.setItem('finans_privacy',privacyOn?'1':'0'); }catch(e){}
   updatePrivacyBtn(); renderAll();
 }
-const APP_VERSION='v21 · 31.10.2026';
+const APP_VERSION='v22 · 31.10.2026';
 function showVersion(){ const e=document.getElementById('appVer'); if(e) e.textContent='Sürüm '+APP_VERSION; const b=document.getElementById('backupVer'); if(b) b.textContent='Sürüm '+APP_VERSION; }
 function updatePrivacyBtn(){ const b=document.getElementById('privBtn'); if(b) b.textContent=privacyOn?'🙈':'👁'; }
 function fmt(n,dec=2){ if(privacyOn) return '₺•••••'; return '₺'+Number(n).toLocaleString('tr-TR',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
@@ -2459,17 +2459,24 @@ function ozetBannerHtml(){
     </div></div>`;
 }
 function dismissOzet(){ try{ localStorage.setItem('finans_ozet_seen',new Date().toISOString().slice(0,7)); }catch(e){} renderAll(); }
-function openOzet(){ ozetOffset=-1; dismissOzet(); goPage('kontrol'); }
+function openOzet(){ ozetOffset=-1; kView='ozet'; dismissOzet(); goPage('kontrol'); }
 
+let kView='karsilastirma'; // 'karsilastirma' | 'ozet'
+function setKView(v){ kView=v; renderKontrol(); window.scrollTo(0,0); }
+function kTabsHtml(){
+  const t=(k,l)=>`<button class="ctrl-tab ${kView===k?'active':''}" style="padding:9px 4px;font-size:12.5px;" onclick="setKView('${k}')">${l}</button>`;
+  return `<div style="display:flex;gap:6px;margin-bottom:12px;">${t('karsilastirma','📊 Karşılaştırma')}${t('ozet','📅 Aylık Özet')}</div>`;
+}
 function renderKontrol() {
   const page = document.getElementById('pageKontrol');
+  if (kView==='ozet') { page.innerHTML = kTabsHtml() + ozetHtml(); return; }
   const snaps = getSnapshots();
   const todaySnap = buildSnapshot(); // anlık hesap (kayıtlı değil, canlı)
   const pastSnap = getSnapshotForDate(ctrlPeriod);
   const lastSaved = snaps.length ? snaps[snaps.length-1].date : null;
   const lastSavedFmt = lastSaved ? new Date(lastSaved).toLocaleDateString('tr-TR', {day:'2-digit',month:'short',year:'numeric'}) : 'Henüz kaydedilmedi';
 
-  let html = ozetHtml() + `
+  let html = kTabsHtml() + `
     <button class="ctrl-save-btn" onclick="manualSnapshot()">
       📸 Bugünün Değerlerini Kaydet
     </button>
