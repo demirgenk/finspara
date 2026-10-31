@@ -289,6 +289,26 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .mev-summary.b-amber{border-color:var(--amber);}
 .mev-summary.b-red{border-color:var(--red);}
 .mev-summary.b-red-bg{border-color:var(--red);background:var(--red-bg);}
+.mev-summary{position:relative;overflow:hidden;padding-left:19px;}
+.mev-summary::before{content:'';position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--st,var(--green));}
+.mev-summary.s-active{--st:var(--green);border-color:var(--green);}
+.mev-summary.s-soon{--st:var(--yellow);border-color:var(--yellow-border);background:var(--yellow-bg);}
+.mev-summary.s-urgent{--st:var(--red);border-color:var(--red);background:var(--red-bg);animation:mevPulse 2s ease-in-out infinite;}
+.mev-summary.s-expired{--st:var(--red);border-color:var(--red);background:var(--red-bg);}
+@keyframes mevPulse{0%,100%{box-shadow:0 0 0 0 rgba(232,110,109,0);}50%{box-shadow:0 0 0 4px rgba(232,110,109,.35);}}
+@media (prefers-reduced-motion:reduce){.mev-summary.s-urgent{animation:none;}}
+.mev-badge{display:inline-block;margin-top:4px;padding:4px 10px;border-radius:14px;font-size:12px;font-weight:700;white-space:nowrap;}
+.mev-badge.b-active{background:var(--green-bg);color:var(--green);}
+.mev-badge.b-soon{background:var(--yellow);color:#3a3000;}
+.mev-badge.b-urgent,.mev-badge.b-expired{background:var(--red);color:#fff;font-size:13px;}
+.mev-sum-progress{position:absolute;left:0;right:0;bottom:0;height:3px;}
+.mev-sum-progress div{height:100%;background:var(--st);opacity:.85;}
+.mev-alert{background:var(--red-bg);border:1.5px solid var(--red);border-radius:14px;padding:11px 13px;margin-bottom:10px;}
+.mev-alert.soon{background:var(--yellow-bg);border-color:var(--yellow-border);}
+.mev-alert-t{font-size:14px;font-weight:700;color:var(--red);margin-bottom:4px;}
+.mev-alert.soon .mev-alert-t{color:var(--amber);}
+@media(prefers-color-scheme:dark){.mev-alert-t{color:var(--red-light);}.mev-alert.soon .mev-alert-t{color:var(--yellow);}}
+.mev-alert-i{font-size:13px;color:var(--text);padding:2px 0;}
 .mev-sum-left{flex:1;min-width:0;}
 .mev-sum-name{font-size:14px;font-weight:700;color:var(--text);}
 .mev-sum-meta{font-size:12px;color:var(--text2);margin-top:2px;}
@@ -818,7 +838,7 @@ function togglePrivacy(){
   try{ localStorage.setItem('finans_privacy',privacyOn?'1':'0'); }catch(e){}
   updatePrivacyBtn(); renderAll();
 }
-const APP_VERSION='v12 · 31.10.2026';
+const APP_VERSION='v14 · 31.10.2026';
 function showVersion(){ const e=document.getElementById('appVer'); if(e) e.textContent='Sürüm '+APP_VERSION; const b=document.getElementById('backupVer'); if(b) b.textContent='Sürüm '+APP_VERSION; }
 function updatePrivacyBtn(){ const b=document.getElementById('privBtn'); if(b) b.textContent=privacyOn?'🙈':'👁'; }
 function fmt(n,dec=2){ if(privacyOn) return '₺•••••'; return '₺'+Number(n).toLocaleString('tr-TR',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
@@ -1293,6 +1313,13 @@ function renderMevduat(){
     if(mevduatStatus(m)!=='expired') toplamGunluk+=c.dailyNet;
   });
   let html=`<button class="add-card-btn" onclick="openMevduatModal()">+ Mevduat Ekle</button>`;
+  const near=list.filter(m=>mevduatStatus(m)!=='active');
+  if(near.length){
+    const hasRed=near.some(m=>['urgent','expired'].includes(mevduatStatus(m)));
+    html+=`<div class="mev-alert ${hasRed?'':'soon'}"><div class="mev-alert-t">${hasRed?'⏰':'📅'} ${near.length} mevduatın vadesi yaklaşıyor</div>`+
+      near.map(m=>{ const dl=daysLeft(m.endDate); const st=mevduatStatus(m);
+        return `<div class="mev-alert-i">• <b>${m.name}</b> (${m.bank}) — ${st==='expired'?Math.abs(dl)+' gün önce doldu':dl<=0?'bugün doluyor':dl+' gün kaldı'}</div>`; }).join('')+`</div>`;
+  }
   if(!list.length){
     html+=`<div class="empty-state"><div class="ei">🏦</div><p>Mevduat hesabı yok.<br>Eklemek için butona tıklayın.</p></div>`;
   } else {
@@ -1311,7 +1338,7 @@ function renderMevduat(){
       const vadeSonuAnapara=m.principal+c.netTot;
       const vadeTarih=new Date(m.endDate).toLocaleDateString('tr-TR',{day:'2-digit',month:'short',year:'numeric'});
       html+=`<div class="mev-card" id="mcard_${m.id}">
-        <div class="mev-summary ${borderSum}" onclick="toggleMevCard('${m.id}')">
+        <div class="mev-summary s-${s}" onclick="toggleMevCard('${m.id}')">
           <div class="mev-sum-left">
             <div class="mev-sum-name">🏦 ${m.name}</div>
             <div class="mev-sum-meta">${m.bank} · ${personName(m.personId)} · %${m.rate}</div>
@@ -1319,9 +1346,10 @@ function renderMevduat(){
           <div class="mev-sum-right">
             <div class="mev-sum-anapara">${fmt(vadeSonuAnapara)}</div>
             <div class="mev-sum-vade" style="color:var(--text2);">${vadeTarih}</div>
-            <div class="mev-sum-kalan" style="color:${kalanRenk};">${tagTxt}</div>
+            <div class="mev-badge b-${s}">${s==='expired'?`⚠️ ${Math.abs(dl)} gün önce doldu`:dl<=0?'⏰ Bugün doluyor':s==='urgent'?`⏰ ${dl} gün kaldı`:`${dl} gün kaldı`}</div>
           </div>
           <div class="mev-chevron">▼</div>
+          <div class="mev-sum-progress"><div style="width:${s==='expired'?100:Math.min(100,Math.round(c.progress*100))}%"></div></div>
         </div>
         <div class="mev-detail">
           <div class="mev-progress"><div class="mev-progress-fill" style="width:${Math.min(100,Math.round(c.progress*100))}%"></div></div>
@@ -2833,44 +2861,17 @@ function checkAlerts() {
     const dl = daysLeft(m.endDate);
     const c = calcMevduat(m);
 
-    // Bugün vade bitiyor
-    if (dl === 0) {
+    if (dl <= 5) {
+      const expired = dl < 0;
+      const urgent = dl <= 1;
       alerts.push({
-        type: 'mevduat',
+        type: urgent ? 'danger' : 'warning',
         icon: '🏦',
-        title: `${m.name} — Vade Bugün Bitiyor!`,
-        sub: `${personName(m.personId)} · ${m.bank} · Yenilemyi unutmayın`,
+        title: expired ? `${m.name} — Vadesi Geçti!` : dl === 0 ? `${m.name} — Vade Bugün Bitiyor!` : dl === 1 ? `${m.name} — Vade Yarın Bitiyor` : `${m.name} — Vade Yaklaşıyor`,
+        sub: `${personName(m.personId)} · ${m.bank} · ${new Date(m.endDate).toLocaleDateString('tr-TR')}${urgent ? ' · Yenilemeyi/kapatmayı unutmayın' : ''}`,
         amount: fmt(m.principal + c.netTot),
-        daysText: 'Bugün',
-        daysCls: 'green',
-        odendi: false,
-        kreId: null
-      });
-    }
-    // Yarın vade bitiyor
-    else if (dl === 1) {
-      alerts.push({
-        type: 'mevduat',
-        icon: '🏦',
-        title: `${m.name} — Vade Yarın Bitiyor`,
-        sub: `${personName(m.personId)} · ${m.bank}`,
-        amount: fmt(m.principal + c.netTot),
-        daysText: '1 gün kaldı',
-        daysCls: 'green',
-        odendi: false,
-        kreId: null
-      });
-    }
-    // 2-5 gün kaldı
-    else if (dl <= 5) {
-      alerts.push({
-        type: 'mevduat',
-        icon: '🏦',
-        title: `${m.name} — Vade Yaklaşıyor`,
-        sub: `${personName(m.personId)} · ${m.bank} · ${new Date(m.endDate).toLocaleDateString('tr-TR')}`,
-        amount: fmt(m.principal + c.netTot),
-        daysText: dl + ' gün kaldı',
-        daysCls: 'green',
+        daysText: expired ? Math.abs(dl) + ' gün önce doldu' : dl === 0 ? 'Bugün' : dl + ' gün kaldı',
+        daysCls: urgent ? 'red' : 'amber',
         odendi: false,
         kreId: null
       });
