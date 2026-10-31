@@ -717,6 +717,38 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   </div>
 </div>
 
+<!-- Mevduat Kapat / Taşı Modal -->
+<div class="overlay" id="modalMevKapat">
+  <div class="sheet" style="max-height:92vh;overflow-y:auto;">
+    <div class="handle"></div>
+    <h2 id="mkTitle">Mevduatı Kapat</h2>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:1rem;">Kazanılan faiz kalıcı olarak kaydedilir ve aylık özette görünmeye devam eder.</p>
+    <div class="fg"><label>Kapanış Tarihi</label><input type="date" id="mk_date" onchange="mkRecalc()"/></div>
+    <div class="fg"><label>Gerçekleşen Net Kazanç (₺)</label><input type="number" id="mk_kazanc" step="0.01" inputmode="decimal" oninput="mkKEdited=true;mkSyncPrincipal()"/>
+      <div class="hint" id="mk_hint"></div></div>
+    <label style="display:flex;align-items:center;gap:10px;font-size:14px;margin:4px 0 12px;cursor:pointer;">
+      <input type="checkbox" id="mk_yeni" style="width:20px;height:20px;" onchange="document.getElementById('mk_yeni_wrap').style.display=this.checked?'block':'none'"/>
+      <span>➡️ Yeni mevduat olarak aç (başka banka / yenileme)</span>
+    </label>
+    <div id="mk_yeni_wrap" style="display:none;">
+      <div class="fg"><label>Hesap Adı</label><input type="text" id="mk_name"/></div>
+      <div class="fg"><label>Banka</label><input type="text" id="mk_bank"/></div>
+      <div class="fg"><label>Yeni Anapara (₺)</label><input type="number" id="mk_principal" step="0.01" inputmode="decimal" oninput="mkPEdited=true"/>
+        <div class="hint">Varsayılan: eski anapara + kazanç</div></div>
+      <div class="frow">
+        <div class="fg"><label>Faiz Oranı (%)</label><input type="number" id="mk_rate" step="0.01" inputmode="decimal"/></div>
+        <div class="fg"><label>Vergi Oranı (%)</label><input type="number" id="mk_tax" step="0.01" inputmode="decimal"/></div>
+      </div>
+      <div class="fg"><label>Vade (Gün)</label><input type="number" id="mk_tenor" step="1" inputmode="numeric"/></div>
+      <div class="hint" style="margin-bottom:10px;">Yeni mevduat kapanış tarihinde başlar.</div>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn-cancel" onclick="closeModal('modalMevKapat')">İptal</button>
+      <button class="btn-ok" onclick="confirmMevKapat()">Kapat</button>
+    </div>
+  </div>
+</div>
+
 <!-- Mevduat Detail Modal -->
 <div class="overlay" id="modalMevduatDetail">
   <div class="sheet">
@@ -740,6 +772,7 @@ let state = {
   nakit: [],        // [{id,personId,birikim,faizYillik,vergi,cuzdan}]
   kredi: [],        // [{id,personId,name,borc,kesimTarih,odemeTarih}]
   mevduat: [],      // [{id,personId,name,bank,principal,rate,tax,tenor,startDate,endDate}]
+  mevduatGecmis: [], // kapanan mevduatlar [{id,personId,name,bank,principal,rate,tax,tenor,startDate,accrualEnd,closedDate,netKazanc}]
   log: [],          // [{t,kind,personId,name,amount}] olay günlüğü (ödenen kartlar vb.)
   doviz: [],        // [{id,personId,type,amount,alis,satis}]
   altin: [],        // [{id,personId,type,amount,alis,satis}]
@@ -785,7 +818,7 @@ function togglePrivacy(){
   try{ localStorage.setItem('finans_privacy',privacyOn?'1':'0'); }catch(e){}
   updatePrivacyBtn(); renderAll();
 }
-const APP_VERSION='v10 · 31.10.2026';
+const APP_VERSION='v11 · 31.10.2026';
 function showVersion(){ const e=document.getElementById('appVer'); if(e) e.textContent='Sürüm '+APP_VERSION; const b=document.getElementById('backupVer'); if(b) b.textContent='Sürüm '+APP_VERSION; }
 function updatePrivacyBtn(){ const b=document.getElementById('privBtn'); if(b) b.textContent=privacyOn?'🙈':'👁'; }
 function fmt(n,dec=2){ if(privacyOn) return '₺•••••'; return '₺'+Number(n).toLocaleString('tr-TR',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
@@ -1300,6 +1333,7 @@ function renderMevduat(){
           <div class="acc-row"><span class="key">Vade Sonu Anapara</span><span class="v" style="color:var(--yellow);font-size:16px;font-weight:700;">${fmt(vadeSonuAnapara)}</span></div>
           <div class="acc-row"><span class="key">Başlangıç</span><span class="v">${new Date(m.startDate).toLocaleDateString('tr-TR')}</span></div>
           <div class="acc-row"><span class="key">Vade Sonu</span><span class="v">${vadeTarih}</span></div>
+          <div class="acc-row" style="border-bottom:none;padding-top:10px;"><button class="icon-btn" style="width:100%;justify-content:center;font-size:14px;font-weight:700;background:var(--amber-bg);border-radius:10px;height:40px;color:var(--amber);" onclick="openMevKapat('${m.id}')">🔒 Kapat / Başka bankaya taşı</button></div>
           <div class="acc-row" style="border-bottom:none;padding-top:10px;">
             <div style="display:flex;gap:8px;width:100%;">
               <button class="icon-btn" style="flex:1;justify-content:center;font-size:13px;font-weight:600;background:var(--bg);border-radius:10px;height:36px;" onclick="openMevduatEdit('${m.id}')">✏️ Düzenle</button>
@@ -1311,6 +1345,7 @@ function renderMevduat(){
       </div>`;
     });
   }
+  html+=mevGecmisHtml();
   page.innerHTML=html;
 }
 
@@ -1346,6 +1381,93 @@ function openMevduatDetail(id){
     <div class="det-row"><span class="dl">İlerleme</span><span class="dv">${c.elapsed.toFixed(1)} / ${m.tenor} gün</span></div>
   `;
   openModal('modalMevduatDetail');
+}
+
+// ============================================================
+// MEVDUAT KAPAT / TAŞI + GEÇMİŞ
+// ============================================================
+let closingMevId=null, mkKEdited=false, mkPEdited=false;
+function _mkNet(m,closeStr){
+  const elapsed=Math.min(Math.max(0,(new Date(closeStr)-new Date(m.startDate))/86400000),m.tenor);
+  return m.principal*(m.rate/100)*(elapsed/365)*(1-(m.tax??15)/100);
+}
+function openMevKapat(id){
+  const m=state.mevduat.find(x=>x.id===id); if(!m) return;
+  closingMevId=id; mkKEdited=false; mkPEdited=false;
+  document.getElementById('mkTitle').textContent=m.name+' — Kapat';
+  document.getElementById('mk_date').value=today();
+  document.getElementById('mk_yeni').checked=false;
+  document.getElementById('mk_yeni_wrap').style.display='none';
+  document.getElementById('mk_name').value=m.name;
+  document.getElementById('mk_bank').value='';
+  document.getElementById('mk_rate').value='';
+  document.getElementById('mk_tax').value=m.tax??15;
+  document.getElementById('mk_tenor').value=m.tenor;
+  mkRecalc();
+  openModal('modalMevKapat');
+}
+function mkRecalc(){
+  const m=state.mevduat.find(x=>x.id===closingMevId); if(!m) return;
+  const dt=document.getElementById('mk_date').value||today();
+  const net=_mkNet(m,dt);
+  if(!mkKEdited) document.getElementById('mk_kazanc').value=net.toFixed(2);
+  document.getElementById('mk_hint').textContent='Hesaplanan: '+fmt(net)+' (bankanın yatırdığı tutar farklıysa değiştirin)';
+  mkSyncPrincipal();
+}
+function mkSyncPrincipal(){
+  const m=state.mevduat.find(x=>x.id===closingMevId); if(!m||mkPEdited) return;
+  const k=parseFloat(document.getElementById('mk_kazanc').value)||0;
+  document.getElementById('mk_principal').value=(m.principal+k).toFixed(2);
+}
+function confirmMevKapat(){
+  const m=state.mevduat.find(x=>x.id===closingMevId); if(!m) return;
+  const closedDate=document.getElementById('mk_date').value;
+  const net=parseFloat(document.getElementById('mk_kazanc').value);
+  if(!closedDate||isNaN(net)||net<0){ alert('Kapanış tarihi ve kazanç tutarını girin.'); return; }
+  const yeni=document.getElementById('mk_yeni').checked;
+  let nm=null;
+  if(yeni){
+    const name=document.getElementById('mk_name').value.trim(), bank=document.getElementById('mk_bank').value.trim();
+    const principal=parseFloat(document.getElementById('mk_principal').value);
+    const rate=parseFloat(document.getElementById('mk_rate').value);
+    const tax=parseFloat(document.getElementById('mk_tax').value)||15;
+    const tenor=parseInt(document.getElementById('mk_tenor').value);
+    if(!name||!bank||isNaN(principal)||isNaN(rate)||isNaN(tenor)||tenor<1){ alert('Yeni mevduat için tüm alanları doldurun.'); return; }
+    const end=new Date(closedDate); end.setDate(end.getDate()+tenor);
+    nm={id:uid(),personId:m.personId,name,bank,principal,rate,tax,tenor,startDate:closedDate,endDate:end.toISOString().split('T')[0]};
+  }
+  const accrualEnd = closedDate<m.endDate ? closedDate : m.endDate;
+  state.mevduatGecmis=state.mevduatGecmis||[];
+  state.mevduatGecmis.push({id:uid(),personId:m.personId,name:m.name,bank:m.bank,principal:m.principal,rate:m.rate,tax:m.tax??15,tenor:m.tenor,startDate:m.startDate,endDate:m.endDate,accrualEnd,closedDate,netKazanc:net});
+  state.mevduat=state.mevduat.filter(x=>x.id!==m.id);
+  if(nm) state.mevduat.push(nm);
+  closeModal('modalMevKapat'); renderAll(); save();
+}
+function deleteGecmis(id){
+  if(!confirm('Bu kapanan mevduat kaydı silinsin mi? Kazancı aylık özetten de çıkar.')) return;
+  state.mevduatGecmis=(state.mevduatGecmis||[]).filter(x=>x.id!==id); renderAll(); save();
+}
+function mevGecmisHtml(){
+  const list=[...filterByPerson(state.mevduatGecmis||[])].sort((a,b)=>b.closedDate.localeCompare(a.closedDate));
+  if(!list.length) return '';
+  const total=list.reduce((a,g)=>a+g.netKazanc,0);
+  const thisYear=new Date().getFullYear();
+  const yilTotal=list.filter(g=>g.closedDate.startsWith(String(thisYear))).reduce((a,g)=>a+g.netKazanc,0);
+  const rows=list.map(g=>`<div class="acc-row" style="align-items:flex-start;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:14px;font-weight:700;">${g.name} <span style="font-weight:400;color:var(--text2);font-size:12px;">· ${g.bank}</span></div>
+        <div style="font-size:12px;color:var(--text2);">${personName(g.personId)} · %${g.rate} · ${new Date(g.startDate).toLocaleDateString('tr-TR')} → ${new Date(g.closedDate).toLocaleDateString('tr-TR')}</div>
+        <div style="font-size:12px;color:var(--text2);">Anapara ${fmt(g.principal)}</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:15px;font-weight:700;color:var(--green);">${fmt(g.netKazanc)}</div>
+        <button onclick="deleteGecmis('${g.id}')" style="background:none;border:none;color:var(--red-light);font-size:12px;cursor:pointer;font-family:inherit;padding:4px 0;">🗑 Sil</button>
+      </div></div>`).join('');
+  return `<div class="ctrl-section" style="margin-top:14px;">
+    <div class="ctrl-section-title">📜 Kapanan Mevduatlar</div>
+    <div class="acc-row"><span class="key">Toplam net kazanç</span><span class="v green" style="font-weight:700;">${fmt(total)}</span></div>
+    <div class="acc-row"><span class="key">${thisYear} yılı</span><span class="v green">${fmt(yilTotal)}</span></div>
+    ${rows}</div>`;
 }
 
 function renewMevduat(){
@@ -2064,7 +2186,8 @@ function saveAltin(){
 // GENERIC DELETE
 // ============================================================
 function deleteItem(cat,id){
-  if(!confirm('Silmek istediğinize emin misiniz?')) return;
+  const msg = cat==='mevduat' ? 'Mevduat silinecek ve kazancı kaydedilmeyecek. Kazancı saklamak için "Kapat / Başka bankaya taşı" kullanın. Yine de silinsin mi?' : 'Silmek istediğinize emin misiniz?';
+  if(!confirm(msg)) return;
   state[cat]=state[cat].filter(x=>x.id!==id);
   renderAll(); save();
 }
@@ -2177,6 +2300,14 @@ function ozetData(off){
     const st=new Date(m.startDate).getTime(), en=st+m.tenor*86400000;
     mev+=m.principal*(m.rate/100)/365*_ovl(st,en,S,END)*(1-(m.tax??15)/100);
   });
+  let mevKapali=0;
+  filterByPerson(state.mevduatGecmis||[]).forEach(g=>{
+    const st=new Date(g.startDate).getTime(), en=new Date(g.accrualEnd||g.closedDate).getTime();
+    const tot=(en-st)/86400000;
+    if(tot<=0){ const cd=new Date(g.closedDate).getTime(); if(cd>=S&&cd<e.getTime()) mevKapali+=g.netKazanc; }
+    else mevKapali+=g.netKazanc*_ovl(st,en,S,Math.min(e.getTime(),en))/tot;
+  });
+  mev+=mevKapali;
   filterByPerson(state.nakit).forEach(n=>{
     const dd=Math.max(0,(END-S)/86400000);
     nak+=(n.birikim||0)*((n.faizYillik||0)/100)/365*dd*(1-(n.vergi??15)/100);
@@ -2192,7 +2323,7 @@ function ozetData(off){
     to=off===0?buildSnapshot():(inM.length?inM[inM.length-1]:null);
     if(from&&to&&from.date===to.date) from=null;
   }
-  return {s,mev,nak,faiz:mev+nak,payCount:pays.length,payTotal,from,to};
+  return {s,mev,mevKapali,nak,faiz:mev+nak,payCount:pays.length,payTotal,from,to};
 }
 function ozetMonthName(off){
   const n=new Date(); return new Date(n.getFullYear(),n.getMonth()+off,1).toLocaleDateString('tr-TR',{month:'long',year:'numeric'});
@@ -2210,6 +2341,7 @@ function ozetHtml(){
     </div>
     <div style="font-size:13px;font-weight:700;margin-bottom:4px;text-transform:capitalize;">${ozetMonthName(ozetOffset)}</div>
     ${row('Mevduat net faiz kazancı',fmt(o.mev),'style="color:var(--green);"')}
+    ${o.mevKapali>0?row('&nbsp;&nbsp;↳ kapanan mevduatlardan',fmt(o.mevKapali),'style="color:var(--text2);"'):''}
     ${row('Birikim faizi (tahmini)',fmt(o.nak),'style="color:var(--green);"')}
     ${row('<b>Toplam faiz geliri</b>',`<b>${fmt(o.faiz)}</b>`,'style="color:var(--green);"')}
     ${row('Kredi kartı ödemeleri',o.payCount?`${fmt(o.payTotal)} (${o.payCount} ödeme)`:'Kayıt yok')}`;
