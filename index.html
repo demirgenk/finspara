@@ -706,7 +706,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
     <button class="btn-backup export" style="width:100%;margin-bottom:10px;padding:14px;" onclick="shareBackup()">📤 Paylaş (WhatsApp, Drive, Mail…)</button>
     <button class="btn-backup import" style="width:100%;margin-bottom:10px;padding:14px;" onclick="document.getElementById('importFile').click()">⬆️ JSON Dosyasından Yükle</button>
     <input type="file" id="importFile" accept=".json" style="display:none" onchange="importBackup(event)"/>
-    <div class="fg" style="margin-bottom:10px;"><label>🔒 Yedek şifresi (isteğe bağlı)</label><input type="password" id="backupPass" placeholder="Boş bırakırsanız şifresiz yedeklenir" autocomplete="new-password"/>
+    <div class="fg" style="margin-bottom:10px;"><label>🔒 Yedek şifresi (isteğe bağlı)</label><input type="password" id="backupPass" oninput="schedulePrepare()" placeholder="Boş bırakırsanız şifresiz yedeklenir" autocomplete="new-password"/>
       <div style="font-size:11px;color:var(--text2);margin-top:4px;">Şifre girerseniz yedek dosyası şifrelenir. Şifreyi unutursanız yedek açılamaz.</div></div>
     <div id="backupVer" style="font-size:11px;text-align:center;color:var(--text2);margin-bottom:6px;"></div>
     <div id="backupInfo" style="font-size:12px;text-align:center;color:var(--text3);margin-top:8px;"></div>
@@ -782,7 +782,7 @@ function togglePrivacy(){
   try{ localStorage.setItem('finans_privacy',privacyOn?'1':'0'); }catch(e){}
   updatePrivacyBtn(); renderAll();
 }
-const APP_VERSION='v5 · 31.10.2026';
+const APP_VERSION='v6 · 31.10.2026';
 function showVersion(){ const e=document.getElementById('appVer'); if(e) e.textContent='Sürüm '+APP_VERSION; const b=document.getElementById('backupVer'); if(b) b.textContent='Sürüm '+APP_VERSION; }
 function updatePrivacyBtn(){ const b=document.getElementById('privBtn'); if(b) b.textContent=privacyOn?'🙈':'👁'; }
 function fmt(n,dec=2){ if(privacyOn) return '₺•••••'; return '₺'+Number(n).toLocaleString('tr-TR',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
@@ -1821,7 +1821,7 @@ function renderAll(){
 // ============================================================
 // MODAL HELPERS
 // ============================================================
-function openModal(id){ document.getElementById(id).classList.add('open'); }
+function openModal(id){ document.getElementById(id).classList.add('open'); if(id==='modalBackup'){ schedulePrepare(); } }
 function closeModal(id){ document.getElementById(id).classList.remove('open'); editingId=null; }
 
 function fillPersonSelect(selId, defaultPersonId){
@@ -2319,33 +2319,48 @@ async function buildBackupFile(){
   return {blob:new Blob([JSON.stringify(backup,null,2)],{type:'application/json'}),name,count:snapshots.length,enc:!!pass};
 }
 function _backupMsg(t,ok){ const i=document.getElementById('backupInfo'); if(i){i.textContent=t;i.style.color=ok?'var(--green)':'var(--red)';} }
+let _prep=null, _prepTimer=null;
+function _curPass(){ return (document.getElementById('backupPass')||{}).value||''; }
+async function prepareBackup(){
+  const pass=_curPass();
+  try{ const r=await buildBackupFile(); r.text=await r.blob.text(); _prep={pass,r}; }catch(e){ _prep=null; }
+}
+function schedulePrepare(){ _prep=null; clearTimeout(_prepTimer); _prepTimer=setTimeout(prepareBackup,500); }
 async function shareBackup(){
-  let r; try{ r=await buildBackupFile(); }catch(e){ _backupMsg('✗ '+e.message,false); return; }
+  // Paylaşım, dokunma anından hemen sonra çağrılmalı; bu yüzden dosya önceden hazırlanır.
+  let ready=!!(_prep && _prep.pass===_curPass());
+  if(!ready){
+    await prepareBackup();
+    if(!_prep){ _backupMsg('✗ Yedek hazırlanamadı',false); return; }
+  }
+  const r=_prep.r;
   if(!navigator.share){ exportBackup(r,'Bu tarayıcı paylaşmayı desteklemiyor.'); return; }
-  // Android Chrome bazı dosya türlerini paylaşmaz; sırayla farklı türleri dene
-  const types=['application/json','text/plain']; let lastErr='';
+  let lastErr='';
+  const types=['application/json','text/plain'];
   for(const t of types){
     try{
       const file=new File([r.blob],r.name,{type:t});
-      if(navigator.canShare && !navigator.canShare({files:[file]})) continue;
+      if(navigator.canShare && !navigator.canShare({files:[file]})) { lastErr=lastErr||'dosya türü desteklenmiyor'; continue; }
       await navigator.share({files:[file],title:'Finans Takip Yedeği'});
       markBackup(); _backupMsg(`✓ Yedek paylaşıldı${r.enc?' (şifreli)':''} (${r.count} kontrol kaydı dahil)`,true);
       try{renderAll();}catch(e){}
       return;
     }catch(e){
-      if(e&&e.name==='AbortError') return; // kullanıcı vazgeçti
+      if(e&&e.name==='AbortError') return;
       lastErr=(e&&e.name)||String(e);
+      if(e&&e.name==='NotAllowedError' && !ready){
+        _backupMsg('📦 Yedek hazırlandı. Paylaşmak için 📤 Paylaş düğmesine bir kez daha dokunun.',true);
+        return;
+      }
     }
   }
-  // Dosya paylaşımı olmadı: yedeği metin olarak paylaşmayı dene
   try{
-    const txt=await r.blob.text();
-    await navigator.share({title:r.name,text:txt});
+    await navigator.share({title:r.name,text:r.text});
     markBackup(); _backupMsg('✓ Yedek metin olarak paylaşıldı. Alıcıda .json dosyası olarak kaydedin.',true);
     try{renderAll();}catch(e){}
     return;
   }catch(e){ if(e&&e.name==='AbortError') return; lastErr=lastErr||((e&&e.name)||String(e)); }
-  exportBackup(r,'Paylaşım açılamadı. Sebep: '+(lastErr||'dosya paylaşımı desteklenmiyor'));
+  exportBackup(r,'Paylaşım açılamadı. Sebep: '+(lastErr||'bilinmiyor'));
 }
 async function exportBackup(pre,note){
   let r=pre&&pre.blob?pre:null;
