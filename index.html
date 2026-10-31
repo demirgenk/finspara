@@ -2318,7 +2318,7 @@ async function buildBackupFile(){
 function _backupMsg(t,ok){ const i=document.getElementById('backupInfo'); if(i){i.textContent=t;i.style.color=ok?'var(--green)':'var(--red)';} }
 async function shareBackup(){
   let r; try{ r=await buildBackupFile(); }catch(e){ _backupMsg('✗ '+e.message,false); return; }
-  if(!navigator.share){ _backupMsg('ℹ️ Bu tarayıcı paylaşmayı desteklemiyor, dosya indirildi.',true); exportBackup(r); return; }
+  if(!navigator.share){ exportBackup(r,'Bu tarayıcı paylaşmayı desteklemiyor.'); return; }
   // Android Chrome bazı dosya türlerini paylaşmaz; sırayla farklı türleri dene
   const types=['application/json','text/plain']; let lastErr='';
   for(const t of types){
@@ -2342,16 +2342,15 @@ async function shareBackup(){
     try{renderAll();}catch(e){}
     return;
   }catch(e){ if(e&&e.name==='AbortError') return; lastErr=lastErr||((e&&e.name)||String(e)); }
-  _backupMsg('ℹ️ Paylaşım açılamadı, dosya indirildi. (Sebep: '+(lastErr||'dosya paylaşımı desteklenmiyor')+')',true);
-  exportBackup(r);
+  exportBackup(r,'Paylaşım açılamadı. Sebep: '+(lastErr||'dosya paylaşımı desteklenmiyor'));
 }
-async function exportBackup(pre){
+async function exportBackup(pre,note){
   let r=pre&&pre.blob?pre:null;
   try{ if(!r) r=await buildBackupFile(); }catch(e){ _backupMsg('✗ '+e.message,false); return; }
   const url=URL.createObjectURL(r.blob);
   const a=document.createElement('a'); a.href=url; a.download=r.name; a.click(); URL.revokeObjectURL(url);
   markBackup(); try{renderAll();}catch(e){}
-  _backupMsg(`✓ Yedek indirildi${r.enc?' (şifreli)':''}! (${r.count} kontrol kaydı dahil)`,true);
+  _backupMsg(note?`✓ Dosya indirildi. ${note}`:`✓ Yedek indirildi${r.enc?' (şifreli)':''}! (${r.count} kontrol kaydı dahil)`,true);
 }
 
 function importBackup(event){
