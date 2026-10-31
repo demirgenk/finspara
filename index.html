@@ -22,6 +22,9 @@
   --amber-bg: #FFF3CD;
   --yellow: #c8a000;
   --yellow-t: #6b5200;
+  --orange: #f97316;
+  --orange-bg: #FFF1E6;
+  --orange-t: #c2410c;
   --yellow-bg: #fffde0;
   --yellow-border: #f0d000;
   --blue: #2563EB;
@@ -39,7 +42,7 @@
     --bg:#111;--card:#1c1c1e;--text:#f0f0f0;--text2:#888;--text3:#555;
     --border:#2c2c2e;--green-bg:#0a2e22;--red-bg:#2e0d0d;--red:#e86e6d;--red-light:#f4a0a0;--amber-bg:#2e1f00;--text3:#777;--text2:#aaa;
     --blue-bg:#0d1a3a;--purple-bg:#1a0f33;--gold-bg:#2e1f00;
-    --yellow:#f5d000;--yellow-t:#f5d000;--yellow-bg:#2a2400;--yellow-border:#c8a800;
+    --yellow:#f5d000;--yellow-t:#f5d000;--orange:#fb923c;--orange-bg:#2e1a08;--orange-t:#fdba74;--yellow-bg:#2a2400;--yellow-border:#c8a800;
   }
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -104,6 +107,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 /* SUMMARY CARDS */
 .summary-hero{background:linear-gradient(135deg,#1D9E75,#085041);border-radius:var(--radius);padding:1.25rem;margin-bottom:10px;box-shadow:0 4px 16px rgba(29,158,117,0.25);}
+.hero-pal-btn{position:absolute;top:10px;right:10px;background:rgba(255,255,255,.18);border:none;color:#fff;font-size:15px;width:32px;height:32px;border-radius:50%;cursor:pointer;}
+.hero-pal{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;}
+.hero-sw{width:28px;height:28px;border-radius:50%;border:2px solid rgba(255,255,255,.35);cursor:pointer;padding:0;}
+.hero-sw.sel{border:3px solid #fff;box-shadow:0 0 0 2px rgba(0,0,0,.25);}
 .hero-label{font-size:12px;color:rgba(255,255,255,0.7);font-weight:500;margin-bottom:4px;}
 .hero-val{font-size:30px;font-weight:700;color:#fff;}
 .hero-sub{font-size:12px;color:rgba(255,255,255,0.8);margin-top:4px;}
@@ -334,7 +341,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .asset-summary{display:flex;align-items:center;gap:10px;padding:13px 14px;cursor:pointer;background:var(--card);border:1.5px solid transparent;border-radius:var(--radius);transition:border-radius .25s;}
 .asset-card.open .asset-summary{border-radius:var(--radius) var(--radius) 0 0;}
 .asset-summary.b-blue{border-color:var(--blue);}
-.asset-summary.b-gold{border-color:var(--gold);}
+.asset-summary.b-gold{border-color:var(--yellow);}
+.asset-summary.b-orange{border-color:var(--orange);}
+.btn-kur-manual.kur-doviz{background:var(--orange-bg);border-color:var(--orange);color:var(--orange-t);}
+.btn-kur-manual.kur-altin{background:var(--yellow-bg);border-color:var(--yellow);color:var(--yellow-t);}
 .asset-summary.b-green{border-color:var(--green);}
 .asset-sum-icon{font-size:28px;flex-shrink:0;}
 .asset-sum-left{flex:1;min-width:0;}
@@ -843,7 +853,7 @@ function togglePrivacy(){
   try{ localStorage.setItem('finans_privacy',privacyOn?'1':'0'); }catch(e){}
   updatePrivacyBtn(); renderAll();
 }
-const APP_VERSION='v18 · 31.10.2026';
+const APP_VERSION='v19 · 31.10.2026';
 function showVersion(){ const e=document.getElementById('appVer'); if(e) e.textContent='Sürüm '+APP_VERSION; const b=document.getElementById('backupVer'); if(b) b.textContent='Sürüm '+APP_VERSION; }
 function updatePrivacyBtn(){ const b=document.getElementById('privBtn'); if(b) b.textContent=privacyOn?'🙈':'👁'; }
 function fmt(n,dec=2){ if(privacyOn) return '₺•••••'; return '₺'+Number(n).toLocaleString('tr-TR',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
@@ -920,6 +930,24 @@ function selectPerson(id){ selectedPerson=id; renderAll(); }
 // ============================================================
 // OVERVIEW PAGE
 // ============================================================
+const HERO_THEMES=[
+  {n:'Yeşil',a:'#1D9E75',b:'#085041'},
+  {n:'Mavi',a:'#3b82f6',b:'#1e3a8a'},
+  {n:'Mor',a:'#8b5cf6',b:'#4c1d95'},
+  {n:'Turuncu',a:'#f97316',b:'#9a3412'},
+  {n:'Pembe',a:'#ec4899',b:'#831843'},
+  {n:'Turkuaz',a:'#14b8a6',b:'#134e4a'},
+  {n:'Antrasit',a:'#64748b',b:'#0f172a'}
+];
+let heroThemeIdx=0, heroPalOpen=false;
+try{ heroThemeIdx=Math.min(6,Math.max(0,parseInt(localStorage.getItem('finans_hero_theme')||'0',10)||0)); }catch(e){}
+function setHeroTheme(i){ heroThemeIdx=i; try{ localStorage.setItem('finans_hero_theme',String(i)); }catch(e){} renderAll(); }
+function toggleHeroPal(e){ if(e) e.stopPropagation(); heroPalOpen=!heroPalOpen; renderAll(); }
+function heroStyle(){ const t=HERO_THEMES[heroThemeIdx]; return `position:relative;background:linear-gradient(135deg,${t.a},${t.b});box-shadow:0 4px 16px ${t.a}40;`; }
+function heroPalHtml(){
+  if(!heroPalOpen) return '';
+  return `<div class="hero-pal">${HERO_THEMES.map((t,i)=>`<button class="hero-sw ${i===heroThemeIdx?'sel':''}" title="${t.n}" aria-label="${t.n}" style="background:linear-gradient(135deg,${t.a},${t.b});" onclick="setHeroTheme(${i})"></button>`).join('')}</div>`;
+}
 function toggleHero(){
   heroMode = heroMode==='anapara' ? 'netpara' : 'anapara';
   renderOverview();
@@ -978,7 +1006,8 @@ function renderOverview(){
     : 'Mevduat + Net Nakit + Döviz + Altın';
 
   page.innerHTML=ozetBannerHtml()+backupBannerHtml()+`
-    <div class="summary-hero">
+    <div class="summary-hero" style="${heroStyle()}">
+      <button class="hero-pal-btn" onclick="toggleHeroPal(event)" aria-label="Renk seç">🎨</button>
       <div class="hero-label">${heroLabel}</div>
       <div class="hero-val" style="color:${isNetPara&&heroVal<0?'#ffaaaa':'#fff'}">${fmt(heroVal)}</div>
       <div class="hero-sub">${heroSub}</div>
@@ -989,6 +1018,7 @@ function renderOverview(){
           <span class="switch-slider"></span>
         </label>
       </div>
+      ${heroPalHtml()}
     </div>
     <div class="grid2">
       <div class="mini-card">
@@ -1585,7 +1615,7 @@ function renderDoviz(){
       const mid=midRate(d.alis,d.satis);
       const tl=d.amount*mid;
       html+=`<div class="asset-card" id="dcard_${d.id}">
-        <div class="asset-summary b-blue" onclick="toggleAssetCard('dcard_${d.id}')">
+        <div class="asset-summary b-orange" onclick="toggleAssetCard('dcard_${d.id}')">
           <div class="asset-sum-icon">💱</div>
           <div class="asset-sum-left">
             <div class="asset-sum-name">${d.type}</div>
@@ -1809,8 +1839,8 @@ function toggleAutoKur(on) { state.autoKur = !!on; save(); }
 
 function kurButtonsHtml(mode) {
   return `<div class="kur-btn-row">
-    <button class="btn-kur-manual" id="kurAutoBtn_${mode}" onclick="refreshAllRates(true)">🔄 Kurları Güncelle</button>
-    <button class="btn-kur-manual" onclick="openKurModal('${mode}')">✏️ Elle Güncelle</button>
+    <button class="btn-kur-manual kur-${mode}" id="kurAutoBtn_${mode}" onclick="refreshAllRates(true)">🔄 Kurları Güncelle</button>
+    <button class="btn-kur-manual kur-${mode}" onclick="openKurModal('${mode}')">✏️ Elle Güncelle</button>
   </div>
   <label class="kur-auto-toggle"><input type="checkbox" ${state.autoKur !== false ? 'checked' : ''} onchange="toggleAutoKur(this.checked)"/> Uygulama açılırken kurları otomatik güncelle</label>
   ${state.kurLastUpdate ? `<div class="kur-info ok" style="margin:8px 0 10px;">Son güncelleme: ${state.kurLastUpdate}</div>` : ''}`;
