@@ -705,7 +705,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
     <button class="btn-backup export" style="width:100%;margin-bottom:10px;padding:14px;" onclick="exportBackup()">⬇️ JSON Olarak İndir</button>
     <button class="btn-backup export" style="width:100%;margin-bottom:10px;padding:14px;" onclick="shareBackup()">📤 Paylaş (WhatsApp, Drive, Mail…)</button>
     <button class="btn-backup import" style="width:100%;margin-bottom:10px;padding:14px;" onclick="document.getElementById('importFile').click()">⬆️ JSON Dosyasından Yükle</button>
-    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importBackup(event)"/>
+    <input type="file" id="importFile" accept=".json,.txt,application/json,text/plain" style="display:none" onchange="importBackup(event)"/>
     <div class="fg" style="margin-bottom:10px;"><label>🔒 Yedek şifresi (isteğe bağlı)</label><input type="password" id="backupPass" oninput="schedulePrepare()" placeholder="Boş bırakırsanız şifresiz yedeklenir" autocomplete="new-password"/>
       <div style="font-size:11px;color:var(--text2);margin-top:4px;">Şifre girerseniz yedek dosyası şifrelenir. Şifreyi unutursanız yedek açılamaz.</div></div>
     <div id="backupVer" style="font-size:11px;text-align:center;color:var(--text2);margin-bottom:6px;"></div>
@@ -782,7 +782,7 @@ function togglePrivacy(){
   try{ localStorage.setItem('finans_privacy',privacyOn?'1':'0'); }catch(e){}
   updatePrivacyBtn(); renderAll();
 }
-const APP_VERSION='v6 · 31.10.2026';
+const APP_VERSION='v8 · 31.10.2026';
 function showVersion(){ const e=document.getElementById('appVer'); if(e) e.textContent='Sürüm '+APP_VERSION; const b=document.getElementById('backupVer'); if(b) b.textContent='Sürüm '+APP_VERSION; }
 function updatePrivacyBtn(){ const b=document.getElementById('privBtn'); if(b) b.textContent=privacyOn?'🙈':'👁'; }
 function fmt(n,dec=2){ if(privacyOn) return '₺•••••'; return '₺'+Number(n).toLocaleString('tr-TR',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
@@ -2326,8 +2326,10 @@ async function prepareBackup(){
   try{ const r=await buildBackupFile(); r.text=await r.blob.text(); _prep={pass,r}; }catch(e){ _prep=null; }
 }
 function schedulePrepare(){ _prep=null; clearTimeout(_prepTimer); _prepTimer=setTimeout(prepareBackup,500); }
+function _shareIdx(){ try{ return parseInt(localStorage.getItem('finans_shareVar')||'0',10)||0; }catch(e){ return 0; } }
+function _setShareIdx(i){ try{ localStorage.setItem('finans_shareVar',String(i)); }catch(e){} }
 async function shareBackup(){
-  // Paylaşım, dokunma anından hemen sonra çağrılmalı; bu yüzden dosya önceden hazırlanır.
+  // Chrome, başarısız bir paylaşımdan sonra dokunma iznini tüketir; bu yüzden her dokunuşta yalnızca BİR biçim denenir.
   let ready=!!(_prep && _prep.pass===_curPass());
   if(!ready){
     await prepareBackup();
@@ -2335,32 +2337,31 @@ async function shareBackup(){
   }
   const r=_prep.r;
   if(!navigator.share){ exportBackup(r,'Bu tarayıcı paylaşmayı desteklemiyor.'); return; }
-  let lastErr='';
-  const types=['application/json','text/plain'];
-  for(const t of types){
-    try{
-      const file=new File([r.blob],r.name,{type:t});
-      if(navigator.canShare && !navigator.canShare({files:[file]})) { lastErr=lastErr||'dosya türü desteklenmiyor'; continue; }
-      await navigator.share({files:[file],title:'Finans Takip Yedeği'});
-      markBackup(); _backupMsg(`✓ Yedek paylaşıldı${r.enc?' (şifreli)':''} (${r.count} kontrol kaydı dahil)`,true);
-      try{renderAll();}catch(e){}
-      return;
-    }catch(e){
-      if(e&&e.name==='AbortError') return;
-      lastErr=(e&&e.name)||String(e);
-      if(e&&e.name==='NotAllowedError' && !ready){
-        _backupMsg('📦 Yedek hazırlandı. Paylaşmak için 📤 Paylaş düğmesine bir kez daha dokunun.',true);
-        return;
-      }
+  const names=['metin dosyası (.txt)','JSON dosyası','düz metin'];
+  let idx=_shareIdx()%3;
+  try{
+    if(idx===0){
+      const f=new File([r.blob],r.name.replace(/\.json$/,'.txt'),{type:'text/plain'});
+      await navigator.share({files:[f],title:'Finans Takip Yedeği'});
+    } else if(idx===1){
+      const f=new File([r.blob],r.name,{type:'application/json'});
+      await navigator.share({files:[f],title:'Finans Takip Yedeği'});
+    } else {
+      await navigator.share({title:r.name,text:r.text});
+    }
+    _setShareIdx(idx);
+    markBackup(); _backupMsg(`✓ Yedek paylaşıldı (${names[idx]})${r.enc?' (şifreli)':''}`,true);
+    try{renderAll();}catch(e){}
+  }catch(e){
+    if(e&&e.name==='AbortError') return;
+    const err=((e&&e.name)||'hata')+(e&&e.message?' ('+String(e.message).slice(0,50)+')':'');
+    const next=(idx+1)%3; _setShareIdx(next);
+    if(!ready || idx<2){
+      _backupMsg(`📦 ${names[idx]} biçimi olmadı: ${err}. Şimdi ${names[next]} biçimini denemek için 📤 Paylaş'a tekrar dokunun.`,false);
+    } else {
+      exportBackup(r,'Paylaşım açılamadı: '+err);
     }
   }
-  try{
-    await navigator.share({title:r.name,text:r.text});
-    markBackup(); _backupMsg('✓ Yedek metin olarak paylaşıldı. Alıcıda .json dosyası olarak kaydedin.',true);
-    try{renderAll();}catch(e){}
-    return;
-  }catch(e){ if(e&&e.name==='AbortError') return; lastErr=lastErr||((e&&e.name)||String(e)); }
-  exportBackup(r,'Paylaşım açılamadı. Sebep: '+(lastErr||'bilinmiyor'));
 }
 async function exportBackup(pre,note){
   let r=pre&&pre.blob?pre:null;
