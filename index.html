@@ -344,7 +344,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .asset-summary.b-gold{border-color:var(--yellow);}
 .asset-summary.b-orange{border-color:var(--orange);}
 .btn-kur-manual.kur-doviz{background:var(--orange-bg);border-color:var(--orange);color:var(--orange-t);}
-.btn-kur-manual.kur-altin{background:var(--yellow-bg);border-color:var(--yellow);color:var(--yellow-t);}
+.btn-kur-manual.kur-altin{background:var(--yellow-bg);border-color:var(--yellow);color:var(--text);}
 .asset-summary.b-green{border-color:var(--green);}
 .asset-sum-icon{font-size:28px;flex-shrink:0;}
 .asset-sum-left{flex:1;min-width:0;}
@@ -853,7 +853,7 @@ function togglePrivacy(){
   try{ localStorage.setItem('finans_privacy',privacyOn?'1':'0'); }catch(e){}
   updatePrivacyBtn(); renderAll();
 }
-const APP_VERSION='v19 · 31.10.2026';
+const APP_VERSION='v20 · 31.10.2026';
 function showVersion(){ const e=document.getElementById('appVer'); if(e) e.textContent='Sürüm '+APP_VERSION; const b=document.getElementById('backupVer'); if(b) b.textContent='Sürüm '+APP_VERSION; }
 function updatePrivacyBtn(){ const b=document.getElementById('privBtn'); if(b) b.textContent=privacyOn?'🙈':'👁'; }
 function fmt(n,dec=2){ if(privacyOn) return '₺•••••'; return '₺'+Number(n).toLocaleString('tr-TR',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
@@ -1598,7 +1598,7 @@ function renderDoviz(){
     const dovizGrp = {};
     list.forEach(d=>{ dovizGrp[d.type]=(dovizGrp[d.type]||0)+d.amount; });
     const dovizMiktarRows = Object.entries(dovizGrp).map(([t,a])=>
-      `<div style="font-size:13px;font-weight:700;color:var(--blue-light);">${fmtAmt(a,2)} ${t}</div>`
+      `<div style="font-size:13px;font-weight:700;color:var(--yellow-t);">${fmtAmt(a,2)} ${t}</div>`
     ).join('');
     html+=`<div class="grid2" style="margin-bottom:10px;">
       <div class="mini-card">
@@ -1607,7 +1607,7 @@ function renderDoviz(){
       </div>
       <div class="mini-card">
         <div class="lbl">Toplam Döviz (TL)</div>
-        <div class="val" style="color:var(--blue-light);">${fmt(totalTL)}</div>
+        <div class="val" style="color:var(--yellow-t);">${fmt(totalTL)}</div>
         ${plSummary(list)}
       </div>
     </div>`;
@@ -1622,7 +1622,7 @@ function renderDoviz(){
             <div class="asset-sum-meta">${personName(d.personId)} · Orta kur: ${fmtNum(mid,4)}</div>
           </div>
           <div class="asset-sum-right">
-            <div class="asset-sum-tl" style="color:var(--blue-light);">${fmt(tl)}</div>
+            <div class="asset-sum-tl" style="color:var(--yellow-t);">${fmt(tl)}</div>
             <div class="asset-sum-miktar">${fmtAmt(d.amount,2)} ${d.type}</div>
           </div>
           <div class="asset-chevron">▼</div>
@@ -1632,7 +1632,7 @@ function renderDoviz(){
           <div class="acc-row"><span class="key">Alış Kuru</span><span class="v">${fmtNum(d.alis,4)} ₺</span></div>
           <div class="acc-row"><span class="key">Satış Kuru</span><span class="v">${fmtNum(d.satis,4)} ₺</span></div>
           <div class="acc-row"><span class="key">Orta Kur</span><span class="v">${fmtNum(mid,4)} ₺</span></div>
-          <div class="acc-row"><span class="key">TL Karşılığı</span><span class="v" style="color:var(--blue-light);font-size:16px;font-weight:700;">${fmt(tl)}</span></div>
+          <div class="acc-row"><span class="key">TL Karşılığı</span><span class="v" style="color:var(--yellow-t);font-size:16px;font-weight:700;">${fmt(tl)}</span></div>
           ${plRow(d)}
           <div class="acc-row" style="border-bottom:none;padding-top:10px;">
             <div style="display:flex;gap:8px;width:100%;">
@@ -1664,7 +1664,7 @@ function renderAltin(){
     const altinGrp = {};
     list.forEach(a=>{ altinGrp[a.type]=(altinGrp[a.type]||0)+a.amount; });
     const altinMiktarRows = Object.entries(altinGrp).map(([t,a])=>
-      `<div style="font-size:13px;font-weight:700;color:var(--gold);">${fmtAmt(a,3)} ${t}</div>`
+      `<div style="font-size:13px;font-weight:700;color:var(--text);">${fmtAmt(a,3)} ${t}</div>`
     ).join('');
     html+=`<div class="grid2" style="margin-bottom:10px;">
       <div class="mini-card">
@@ -1673,7 +1673,7 @@ function renderAltin(){
       </div>
       <div class="mini-card">
         <div class="lbl">Toplam Altın (TL)</div>
-        <div class="val gold">${fmt(totalTL)}</div>
+        <div class="val" style="color:var(--text);">${fmt(totalTL)}</div>
         ${plSummary(list)}
       </div>
     </div>`;
@@ -1688,7 +1688,7 @@ function renderAltin(){
             <div class="asset-sum-meta">${personName(a.personId)} · Orta kur: ${fmtNum(mid,2)} ₺</div>
           </div>
           <div class="asset-sum-right">
-            <div class="asset-sum-tl" style="color:var(--gold);">${fmt(tl)}</div>
+            <div class="asset-sum-tl" style="color:var(--text);">${fmt(tl)}</div>
             <div class="asset-sum-miktar">${fmtAmt(a.amount,3)} adet/gram</div>
           </div>
           <div class="asset-chevron">▼</div>
@@ -1698,7 +1698,7 @@ function renderAltin(){
           <div class="acc-row"><span class="key">Alış Kuru</span><span class="v">${fmtNum(a.alis,2)} ₺</span></div>
           <div class="acc-row"><span class="key">Satış Kuru</span><span class="v">${fmtNum(a.satis,2)} ₺</span></div>
           <div class="acc-row"><span class="key">Orta Kur</span><span class="v">${fmtNum(mid,2)} ₺</span></div>
-          <div class="acc-row"><span class="key">TL Karşılığı</span><span class="v" style="color:var(--gold);font-size:16px;font-weight:700;">${fmt(tl)}</span></div>
+          <div class="acc-row"><span class="key">TL Karşılığı</span><span class="v" style="color:var(--text);font-size:16px;font-weight:700;">${fmt(tl)}</span></div>
           ${plRow(a)}
           <div class="acc-row" style="border-bottom:none;padding-top:10px;">
             <div style="display:flex;gap:8px;width:100%;">

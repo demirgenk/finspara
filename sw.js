@@ -1,6 +1,6 @@
 // Finans Takip service worker: uygulama dosyalarını önbelleğe alır (internetsiz açılış).
 // Uygulamayı güncellediğinizde CACHE adındaki sürüm numarasını artırın.
-const CACHE = 'finans-takip-v19';
+const CACHE = 'finans-takip-v20';
 const FILES = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './icon-512-maskable.png'];
 
 self.addEventListener('install', e => {
