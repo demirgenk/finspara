@@ -317,6 +317,27 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .mev-badge.b-urgent,.mev-badge.b-expired{background:var(--red);color:#fff;font-size:12px;}
 .mev-sum-progress{display:none;}
 .mev-sum-progress div{height:100%;background:var(--st);opacity:.85;}
+.kc-root{--s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--s4:#eda100;--s6:#008300;--s7:#6250d6;--s8:#e34948;}
+@media(prefers-color-scheme:dark){:root:where(:not([data-theme="light"])) .kc-root{--s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s6:#008300;--s7:#9085e9;--s8:#e66767;}}
+.kc-chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:8px;-webkit-overflow-scrolling:touch;}
+.kc-chip{flex:0 0 auto;padding:7px 12px;border-radius:18px;border:1.5px solid var(--border);background:var(--card);color:var(--text2);font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;}
+.kc-chip.on{border-color:var(--text);color:var(--text);}
+.kc-card{background:var(--card);border-radius:var(--radius);padding:14px 12px 10px;box-shadow:var(--shadow);}
+.kc-head{display:flex;justify-content:space-between;align-items:flex-end;gap:8px;margin-bottom:6px;padding:0 4px;}
+.kc-big{font-size:24px;font-weight:700;color:var(--text);line-height:1.1;}
+.kc-sub{font-size:12px;color:var(--text2);margin-top:2px;}
+.kc-wrap{position:relative;touch-action:pan-y;}
+.kc-wrap svg{display:block;width:100%;height:auto;outline:none;}
+.kc-tip{position:absolute;pointer-events:none;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25);font-size:12px;min-width:130px;opacity:0;transition:opacity .1s;z-index:5;}
+.kc-tip.on{opacity:1;}
+.kc-tip .v{font-size:15px;font-weight:700;color:var(--text);}
+.kc-tip .d{color:var(--text2);}
+.kc-tip .k{display:inline-block;width:12px;height:2px;border-radius:1px;vertical-align:middle;margin-right:5px;}
+.kc-row{display:flex;gap:6px;margin:8px 0 2px;}
+.kc-tbl{width:100%;border-collapse:collapse;font-size:13px;}
+.kc-tbl th{text-align:left;font-size:11px;color:var(--text2);text-transform:uppercase;padding:6px 4px;border-bottom:1px solid var(--border);}
+.kc-tbl td{padding:7px 4px;border-bottom:1px solid var(--border);color:var(--text);}
+.kc-tbl td:nth-child(n+2){text-align:right;}
 .mev-alert{background:var(--red-bg);border:1.5px solid var(--red);border-radius:14px;padding:11px 13px;margin-bottom:10px;}
 .mev-alert.soon{background:var(--yellow-bg);border-color:var(--yellow-border);}
 .mev-alert-t{font-size:14px;font-weight:700;color:var(--red);margin-bottom:4px;}
@@ -862,7 +883,7 @@ function togglePrivacy(){
   try{ localStorage.setItem('finans_privacy',privacyOn?'1':'0'); }catch(e){}
   updatePrivacyBtn(); renderAll();
 }
-const APP_VERSION='v25 · 31.10.2026';
+const APP_VERSION='v27 · 31.10.2026';
 function showVersion(){ const e=document.getElementById('appVer'); if(e) e.textContent='Sürüm '+APP_VERSION; const b=document.getElementById('backupVer'); if(b) b.textContent='Sürüm '+APP_VERSION; }
 function updatePrivacyBtn(){ const b=document.getElementById('privBtn'); if(b) b.textContent=privacyOn?'🙈':'👁'; }
 function fmt(n,dec=2){ if(privacyOn) return '₺•••••'; return '₺'+Number(n).toLocaleString('tr-TR',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
@@ -1293,7 +1314,7 @@ function renderKredi(){
       <div class="mini-card"><div class="lbl">Kesilen Borç</div><div class="val" style="color:var(--yellow-t);">${fmt(kesimGecenBorc)}</div><div class="sub">Ödeme bekliyor</div></div>
       <div class="mini-card"><div class="lbl">Günlük Borç</div><div class="val amber">${fmt(gunlukBorc)}</div><div class="sub">Aylık ort.</div></div>
     </div>`;
-    const krediCardHtml=(k)=>{
+    const krediCardHtml=(k,plain)=>{
       const dlOdeme=daysLeft(k.odemeTarih);
       const dlKesim=daysLeft(k.kesimTarih);
       const kesimGecti = dlKesim < 0;
@@ -1303,7 +1324,10 @@ function renderKredi(){
       const odemeFontSize = dlOdeme<=1?'15px':'13px';
       const kBadgeCls = dlOdeme<=1?'b-urgent':dlOdeme<=3?'b-soon':'b-solid';
       const kBadgeTxt = dlOdeme<0?`⚠️ ${Math.abs(dlOdeme)} gün geçti`:dlOdeme===0?'⏰ Bugün son gün!':dlOdeme<=3?`⏰ ${dlOdeme} gün kaldı`:`${dlOdeme} gün kaldı`;
-      const kesimBadge = `<span class="mev-badge ${kBadgeCls}">${kBadgeTxt}</span>`;
+      const plainClr = dlOdeme<=1?'var(--red-light)':dlOdeme<=3?'var(--yellow-t)':'var(--green)';
+      const kesimBadge = plain
+        ? `<span style="font-size:13px;font-weight:700;color:${plainClr};">${dlOdeme<0?Math.abs(dlOdeme)+' gün geçti':dlOdeme===0?'Bugün son gün!':dlOdeme+' gün kaldı'}</span>`
+        : `<span class="mev-badge ${kBadgeCls}">${kBadgeTxt}</span>`;
       const kesimMeta = kesimGecti ? '<span style="color:var(--green);font-weight:600;">✓ Kesim geçti</span>' : `Kesim: ${dlKesim} gün`;
       const gunlukBorc = (k.borc||0) / 30;
       const out=`<div class="kredi-card" id="kcard_${k.id}">
@@ -1346,9 +1370,9 @@ function renderKredi(){
     const kesilen=list.filter(k=>daysLeft(k.kesimTarih)<0).sort((a,b)=>daysLeft(a.odemeTarih)-daysLeft(b.odemeTarih));
     const bekleyen=list.filter(k=>daysLeft(k.kesimTarih)>=0).sort((a,b)=>daysLeft(a.kesimTarih)-daysLeft(b.kesimTarih)||daysLeft(a.odemeTarih)-daysLeft(b.odemeTarih));
     const secBaslik=(t)=>`<div style="font-size:13px;font-weight:700;color:var(--text2);margin:6px 2px 8px;">${t}</div>`;
-    if(kesilen.length) html+=secBaslik('✓ Hesap kesimi geçenler · ödeme bekliyor')+kesilen.map(krediCardHtml).join('');
+    if(kesilen.length) html+=secBaslik('✓ Hesap kesimi geçenler · ödeme bekliyor')+kesilen.map(k=>krediCardHtml(k,false)).join('');
     html+=gridHtml;
-    if(bekleyen.length) html+=secBaslik('⏳ Hesap kesimi beklenenler')+bekleyen.map(krediCardHtml).join('');
+    if(bekleyen.length) html+=secBaslik('⏳ Hesap kesimi beklenenler')+bekleyen.map(k=>krediCardHtml(k,true)).join('');
   } else {
     html+=`<div class="empty-state"><div class="ei">💳</div><p>Kredi kartı borcu yok.<br>Eklemek için butona tıklayın.</p></div>`;
   }
@@ -2314,8 +2338,8 @@ function takeSnapshot() {
   const idx = snaps.findIndex(s => s.date === todayStr);
   if (idx >= 0) snaps[idx] = snap;
   else snaps.push(snap);
-  // 60 günden eski kayıtları sil
-  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 60);
+  // 400 günden eski kayıtları sil
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 400);
   const filtered = snaps.filter(s => new Date(s.date) >= cutoff);
   saveSnapshots(filtered);
   return snap;
@@ -2470,15 +2494,148 @@ function ozetBannerHtml(){
 function dismissOzet(){ try{ localStorage.setItem('finans_ozet_seen',new Date().toISOString().slice(0,7)); }catch(e){} renderAll(); }
 function openOzet(){ ozetOffset=-1; kView='ozet'; dismissOzet(); goPage('kontrol'); }
 
-let kView='karsilastirma'; // 'karsilastirma' | 'ozet'
+let kView='karsilastirma'; // 'karsilastirma' | 'ozet' | 'grafik'
+// ---------------- GRAFİK ----------------
+const KC_METRICS=[
+  {k:'toplamAnapara',l:'Toplam Anapara',c:1,f:s=>s.toplamAnapara,bad:false},
+  {k:'netPara',l:'Net Para',c:3,f:s=>s.netPara,bad:false},
+  {k:'mevAnapara',l:'Mevduat',c:7,f:s=>s.mevAnapara,bad:false},
+  {k:'nakit',l:'Nakit',c:6,f:s=>(s.birikim||0)+(s.cuzdan||0),bad:false},
+  {k:'dovizTL',l:'Döviz',c:2,f:s=>s.dovizTL,bad:false},
+  {k:'altinTL',l:'Altın',c:4,f:s=>s.altinTL,bad:false},
+  {k:'kreBorc',l:'Kart Borcu',c:8,f:s=>s.kreBorc,bad:true}
+];
+let kcMetric='toplamAnapara', kcRange=90, kcTable=false, kcIdx=null;
+function kcSetMetric(m){ kcMetric=m; kcIdx=null; renderKontrol(); }
+function kcSetRange(r){ kcRange=r; kcIdx=null; renderKontrol(); }
+function kcToggleTable(){ kcTable=!kcTable; renderKontrol(); }
+function kcPoints(){
+  const snaps=[...getSnapshots()].sort((a,b)=>a.date.localeCompare(b.date));
+  const live=buildSnapshot();
+  const last=snaps[snaps.length-1];
+  if(!last || last.date!==live.date) snaps.push(live);
+  if(kcRange===0) return snaps;
+  const c=new Date(); c.setDate(c.getDate()-kcRange);
+  const cs=c.toISOString().split('T')[0];
+  return snaps.filter(x=>x.date>=cs);
+}
+function kcShort(v){
+  const a=Math.abs(v), sg=v<0?'−':'';
+  if(a>=1e6) return sg+(a/1e6).toLocaleString('tr-TR',{maximumFractionDigits:2})+' Mn';
+  if(a>=1e3) return sg+(a/1e3).toLocaleString('tr-TR',{maximumFractionDigits:1})+' bin';
+  return sg+Math.round(a).toLocaleString('tr-TR');
+}
+function kcDate(ds,long){ return new Date(ds).toLocaleDateString('tr-TR',long?{day:'2-digit',month:'long',year:'numeric',timeZone:'UTC'}:{day:'2-digit',month:'short',timeZone:'UTC'}); }
+function kcDelta(m,diff,base){
+  if(diff===0) return {txt:'– değişim yok',clr:'var(--text2)'};
+  const good = m.bad ? diff<0 : diff>0;
+  const pct = base? (diff/Math.abs(base)*100):0;
+  const sg = diff>0?'▲':'▼';
+  const amt = privacyOn?'•••••':fmtNum(Math.abs(diff),2)+' ₺';
+  return {txt:`${sg} ${amt} (${diff>0?'+':'−'}%${fmtNum(Math.abs(pct),1)})`, amt:`${sg} ${amt}`, pct:`${diff>0?'+':'−'}%${fmtNum(Math.abs(pct),1)}`, clr: good?'var(--green)':'var(--red)'};
+}
+function kChartHtml(){
+  const m=KC_METRICS.find(x=>x.k===kcMetric)||KC_METRICS[0];
+  const chip=(x)=>`<button class="kc-chip ${x.k===m.k?'on':''}" onclick="kcSetMetric('${x.k}')">${x.l}</button>`;
+  const rng=(r,l)=>`<button class="ctrl-tab ${kcRange===r?'active':''}" style="padding:7px 4px;font-size:12px;" onclick="kcSetRange(${r})">${l}</button>`;
+  let h=`<div class="kc-root">
+    <div class="kc-chips">${KC_METRICS.map(chip).join('')}</div>
+    <div class="kc-row">${rng(30,'30 Gün')}${rng(90,'90 Gün')}${rng(365,'1 Yıl')}${rng(0,'Tümü')}</div>`;
+  const pts=kcPoints();
+  if(pts.length<2){
+    h+=`<div class="ctrl-no-data"><div class="ei">📈</div><p>Grafik için en az 2 günlük kayıt gerekiyor.<br><br>Uygulamayı her gün açtıkça kayıtlar kendiliğinden birikir. Şu an ${pts.length} kayıt var.</p></div></div>`;
+    return h;
+  }
+  const vals=pts.map(p=>m.f(p));
+  const first=vals[0], last=vals[vals.length-1];
+  const dl=kcDelta(m,last-first,first);
+  const mn=Math.min(...vals), mx=Math.max(...vals);
+  h+=`<div class="kc-card" style="margin-top:8px;">
+    <div class="kc-head">
+      <div><div class="kc-sub">${m.l} · ${kcDate(pts[pts.length-1].date,true)}</div><div class="kc-big">${fmt(last)}</div></div>
+      <div style="text-align:right;"><div style="font-size:13px;font-weight:700;color:${dl.clr};white-space:nowrap;">${dl.amt||dl.txt}</div><div style="font-size:12px;font-weight:700;color:${dl.clr};">${dl.pct||''}</div><div class="kc-sub">${kcDate(pts[0].date)} → ${kcDate(pts[pts.length-1].date)}</div></div>
+    </div>`;
+  if(kcTable){
+    const rows=[...pts].reverse().map((p,i,arr)=>{
+      const v=m.f(p), prev=arr[i+1]?m.f(arr[i+1]):null;
+      const df=prev===null?null:kcDelta(m,v-prev,prev);
+      return `<tr><td>${kcDate(p.date,true)}</td><td>${fmt(v)}</td><td style="color:${df?df.clr:'var(--text2)'};">${df?df.txt.split(' (')[0]:'–'}</td></tr>`;
+    }).join('');
+    h+=`<div style="max-height:360px;overflow:auto;"><table class="kc-tbl"><thead><tr><th>Tarih</th><th>Değer</th><th>Değişim</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  } else {
+    h+=`<div class="kc-wrap" id="kcWrap"></div><div class="kc-sub" style="padding:4px 4px 0;">En düşük ${fmt(mn)} · En yüksek ${fmt(mx)}</div>`;
+  }
+  h+=`<div style="text-align:center;margin-top:8px;"><button class="kc-chip" onclick="kcToggleTable()">${kcTable?'📈 Grafiği göster':'📋 Tablo olarak göster'}</button></div>
+  </div>
+  <div class="kc-sub" style="margin:8px 4px;">Kayıtlar tüm kişilerin toplamıdır. Her gün uygulama açıldığında bir kayıt alınır.</div></div>`;
+  return h;
+}
+function kcDraw(){
+  const wrap=document.getElementById('kcWrap'); if(!wrap) return;
+  const m=KC_METRICS.find(x=>x.k===kcMetric)||KC_METRICS[0];
+  const pts=kcPoints(); const vals=pts.map(p=>m.f(p));
+  const W=Math.max(280,Math.round(wrap.clientWidth||330)), H=230;
+  const L=privacyOn?10:54, R=14, T=12, B=26, pw=W-L-R, ph=H-T-B;
+  let mn=Math.min(...vals), mx=Math.max(...vals);
+  if(mn===mx){ const e=Math.abs(mn)*0.02||1; mn-=e; mx+=e; }
+  const allPos=Math.min(...vals)>=0; const pad=(mx-mn)*0.1; mn-=pad; mx+=pad; if(allPos&&mn<0) mn=0;
+  const X=i=>L+(pts.length===1?pw/2:pw*i/(pts.length-1));
+  const Y=v=>T+ph-(v-mn)/(mx-mn)*ph;
+  const clr=`var(--s${m.c})`;
+  let g='';
+  for(let t=0;t<=3;t++){
+    const v=mn+(mx-mn)*t/3, y=Y(v);
+    g+=`<line x1="${L}" x2="${W-R}" y1="${y}" y2="${y}" stroke="var(--border)" stroke-width="1"/>`;
+    if(!privacyOn) g+=`<text x="${L-6}" y="${y+4}" text-anchor="end" font-size="11" fill="var(--text2)">${kcShort(v)}</text>`;
+  }
+  const xi=[0,Math.floor((pts.length-1)/2),pts.length-1].filter((v,i,a)=>a.indexOf(v)===i);
+  xi.forEach((i,k)=>{ const anc=i===0?'start':(i===pts.length-1?'end':'middle'); g+=`<text x="${X(i)}" y="${H-7}" text-anchor="${anc}" font-size="11" fill="var(--text2)">${kcDate(pts[i].date)}</text>`; });
+  const path=pts.map((p,i)=>`${i?'L':'M'}${X(i).toFixed(1)} ${Y(vals[i]).toFixed(1)}`).join(' ');
+  const ex=X(pts.length-1), ey=Y(vals[vals.length-1]);
+  const svg=`<svg viewBox="0 0 ${W} ${H}" role="img" tabindex="0" aria-label="${m.l} grafiği, ${pts.length} kayıt" id="kcSvg">
+    ${g}
+    <path d="${path}" fill="none" stroke="${clr}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${ex}" cy="${ey}" r="4" fill="${clr}" stroke="var(--card)" stroke-width="2"/>
+    <line id="kcCross" x1="0" x2="0" y1="${T}" y2="${T+ph}" stroke="var(--text2)" stroke-width="1" style="display:none"/>
+    <circle id="kcDot" r="4.5" fill="${clr}" stroke="var(--card)" stroke-width="2" style="display:none"/>
+  </svg><div class="kc-tip" id="kcTip"></div>`;
+  wrap.innerHTML=svg;
+  const el=document.getElementById('kcSvg'), tip=document.getElementById('kcTip'), cross=document.getElementById('kcCross'), dot=document.getElementById('kcDot');
+  const show=(i)=>{
+    kcIdx=i; const x=X(i), y=Y(vals[i]);
+    cross.setAttribute('x1',x); cross.setAttribute('x2',x); cross.style.display='';
+    dot.setAttribute('cx',x); dot.setAttribute('cy',y); dot.style.display='';
+    const prev=i>0?vals[i-1]:null; const df=prev===null?null:kcDelta(m,vals[i]-prev,prev);
+    tip.innerHTML='';
+    const d1=document.createElement('div'); d1.className='d'; d1.textContent=kcDate(pts[i].date,true);
+    const d2=document.createElement('div'); d2.className='v'; d2.textContent=fmt(vals[i]);
+    const d3=document.createElement('div'); d3.className='d';
+    const k=document.createElement('span'); k.className='k'; k.style.background=clr; d3.appendChild(k); d3.appendChild(document.createTextNode(m.l));
+    tip.appendChild(d1); tip.appendChild(d2); tip.appendChild(d3);
+    if(df){ const d4=document.createElement('div'); d4.style.cssText='font-size:11px;font-weight:700;margin-top:3px;color:'+df.clr; d4.textContent='Önceki kayda göre '+df.txt.split(' (')[0]; tip.appendChild(d4); }
+    const scale=el.getBoundingClientRect().width/W;
+    let left=x*scale+12; const tw=tip.offsetWidth||150;
+    if(left+tw>wrap.clientWidth) left=x*scale-tw-12;
+    tip.style.left=Math.max(0,left)+'px'; tip.style.top=Math.max(0,y*scale-30)+'px'; tip.classList.add('on');
+  };
+  const hide=()=>{ cross.style.display='none'; dot.style.display='none'; tip.classList.remove('on'); };
+  const near=(clientX)=>{ const r=el.getBoundingClientRect(); const px=(clientX-r.left)/r.width*W; let best=0,bd=1e9; pts.forEach((_,i)=>{ const dd=Math.abs(X(i)-px); if(dd<bd){bd=dd;best=i;} }); return best; };
+  el.addEventListener('pointermove',e=>show(near(e.clientX)));
+  el.addEventListener('pointerdown',e=>show(near(e.clientX)));
+  el.addEventListener('pointerleave',hide);
+  el.addEventListener('focus',()=>show(kcIdx===null?pts.length-1:kcIdx));
+  el.addEventListener('blur',hide);
+  el.addEventListener('keydown',e=>{ if(e.key==='ArrowLeft'){ e.preventDefault(); show(Math.max(0,(kcIdx===null?pts.length-1:kcIdx)-1)); } else if(e.key==='ArrowRight'){ e.preventDefault(); show(Math.min(pts.length-1,(kcIdx===null?pts.length-1:kcIdx)+1)); } });
+}
 function setKView(v){ kView=v; renderKontrol(); window.scrollTo(0,0); }
 function kTabsHtml(){
   const t=(k,l)=>`<button class="ctrl-tab ${kView===k?'active':''}" style="padding:9px 4px;font-size:12.5px;" onclick="setKView('${k}')">${l}</button>`;
-  return `<div style="display:flex;gap:6px;margin-bottom:12px;">${t('karsilastirma','📊 Karşılaştırma')}${t('ozet','📅 Aylık Özet')}</div>`;
+  return `<div style="display:flex;gap:6px;margin-bottom:12px;">${t('karsilastirma','📊 Karşılaştırma')}${t('grafik','📈 Grafik')}${t('ozet','📅 Aylık Özet')}</div>`;
 }
 function renderKontrol() {
   const page = document.getElementById('pageKontrol');
   if (kView==='ozet') { page.innerHTML = kTabsHtml() + ozetHtml(); return; }
+  if (kView==='grafik') { page.innerHTML = kTabsHtml() + kChartHtml(); kcDraw(); return; }
   const snaps = getSnapshots();
   const todaySnap = buildSnapshot(); // anlık hesap (kayıtlı değil, canlı)
   const pastSnap = getSnapshotForDate(ctrlPeriod);

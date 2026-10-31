@@ -1,4 +1,3 @@
-[README.md](https://github.com/user-attachments/files/34227178/README.md)
 # Finans Takip
 
 Telefondan kullanılan, tek sayfalık kişisel finans takip uygulaması. Mevduat, kredi kartı, nakit, döviz ve altın varlıklarını tek yerde izler. Sunucu, hesap veya üyelik gerektirmez; tüm veriler yalnızca kullanıcının kendi telefonunda saklanır.
@@ -21,6 +20,7 @@ Telefondan kullanılan, tek sayfalık kişisel finans takip uygulaması. Mevduat
 **Kontrol sekmesi**
 - Günlük otomatik kayıtlarla 7/15/30 gün karşılaştırması.
 - Aylık özet: faiz geliri, kart ödemeleri, varlık değişimi.
+- Çizgi grafik: toplam anapara, net para, mevduat, nakit, döviz, altın ve kart borcunun zaman içindeki seyri (30 gün, 90 gün, 1 yıl, tümü); grafik üzerinde dokunarak değer görme ve tablo görünümü.
 
 **Güvenlik ve yedek**
 - PIN ile ekran kilidi (4-6 hane, güvenlik sorusuyla sıfırlama).
