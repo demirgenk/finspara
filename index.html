@@ -705,7 +705,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
     <button class="btn-backup export" style="width:100%;margin-bottom:10px;padding:14px;" onclick="exportBackup()">⬇️ JSON Olarak İndir</button>
     <button class="btn-backup export" style="width:100%;margin-bottom:10px;padding:14px;" onclick="shareBackup()">📤 Paylaş (WhatsApp, Drive, Mail…)</button>
     <button class="btn-backup import" style="width:100%;margin-bottom:10px;padding:14px;" onclick="document.getElementById('importFile').click()">⬆️ JSON Dosyasından Yükle</button>
-    <input type="file" id="importFile" accept=".json,.txt,application/json,text/plain" style="display:none" onchange="importBackup(event)"/>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importBackup(event)"/>
     <div class="fg" style="margin-bottom:10px;"><label>🔒 Yedek şifresi (isteğe bağlı)</label><input type="password" id="backupPass" oninput="schedulePrepare()" placeholder="Boş bırakırsanız şifresiz yedeklenir" autocomplete="new-password"/>
       <div style="font-size:11px;color:var(--text2);margin-top:4px;">Şifre girerseniz yedek dosyası şifrelenir. Şifreyi unutursanız yedek açılamaz.</div></div>
     <div id="backupVer" style="font-size:11px;text-align:center;color:var(--text2);margin-bottom:6px;"></div>
@@ -782,7 +782,7 @@ function togglePrivacy(){
   try{ localStorage.setItem('finans_privacy',privacyOn?'1':'0'); }catch(e){}
   updatePrivacyBtn(); renderAll();
 }
-const APP_VERSION='v7 · 31.10.2026';
+const APP_VERSION='v6 · 31.10.2026';
 function showVersion(){ const e=document.getElementById('appVer'); if(e) e.textContent='Sürüm '+APP_VERSION; const b=document.getElementById('backupVer'); if(b) b.textContent='Sürüm '+APP_VERSION; }
 function updatePrivacyBtn(){ const b=document.getElementById('privBtn'); if(b) b.textContent=privacyOn?'🙈':'👁'; }
 function fmt(n,dec=2){ if(privacyOn) return '₺•••••'; return '₺'+Number(n).toLocaleString('tr-TR',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
@@ -2335,12 +2335,12 @@ async function shareBackup(){
   }
   const r=_prep.r;
   if(!navigator.share){ exportBackup(r,'Bu tarayıcı paylaşmayı desteklemiyor.'); return; }
-  let lastErr=''; const log=[];
-  const variants=[['application/json',r.name],['text/plain',r.name],['text/plain',r.name.replace(/\.json$/,'.txt')]];
-  for(const [t,fname] of variants){
+  let lastErr='';
+  const types=['application/json','text/plain'];
+  for(const t of types){
     try{
-      const file=new File([r.blob],fname,{type:t});
-      if(navigator.canShare && !navigator.canShare({files:[file]})) { log.push(t+(fname.endsWith('.txt')?' .txt':'')+': desteklenmiyor'); continue; }
+      const file=new File([r.blob],r.name,{type:t});
+      if(navigator.canShare && !navigator.canShare({files:[file]})) { lastErr=lastErr||'dosya türü desteklenmiyor'; continue; }
       await navigator.share({files:[file],title:'Finans Takip Yedeği'});
       markBackup(); _backupMsg(`✓ Yedek paylaşıldı${r.enc?' (şifreli)':''} (${r.count} kontrol kaydı dahil)`,true);
       try{renderAll();}catch(e){}
@@ -2348,7 +2348,6 @@ async function shareBackup(){
     }catch(e){
       if(e&&e.name==='AbortError') return;
       lastErr=(e&&e.name)||String(e);
-      log.push(t+(fname.endsWith('.txt')?' .txt':'')+': '+lastErr+(e&&e.message?' ('+String(e.message).slice(0,60)+')':''));
       if(e&&e.name==='NotAllowedError' && !ready){
         _backupMsg('📦 Yedek hazırlandı. Paylaşmak için 📤 Paylaş düğmesine bir kez daha dokunun.',true);
         return;
@@ -2361,7 +2360,7 @@ async function shareBackup(){
     try{renderAll();}catch(e){}
     return;
   }catch(e){ if(e&&e.name==='AbortError') return; lastErr=lastErr||((e&&e.name)||String(e)); }
-  exportBackup(r,'Paylaşım açılamadı. Ayrıntı: '+(log.join(' | ')||lastErr||'bilinmiyor')+'. Dosyayı Dosyalar/İndirilenler içinden uzun basıp Paylaş ile gönderebilirsiniz.');
+  exportBackup(r,'Paylaşım açılamadı. Sebep: '+(lastErr||'bilinmiyor'));
 }
 async function exportBackup(pre,note){
   let r=pre&&pre.blob?pre:null;
