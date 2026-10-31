@@ -501,7 +501,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 <div class="app">
   <!-- HEADER -->
   <div class="header">
-    <h1 id="pageTitle">Genel Bakış</h1>
+    <div><h1 id="pageTitle">Genel Bakış</h1><div id="appVer" style="font-size:10px;color:var(--text2);line-height:1;margin-top:2px;"></div></div>
     <div style="display:flex;align-items:center;gap:8px;">
       <button id="privBtn" onclick="togglePrivacy()" aria-label="Tutarları gizle/göster" style="background:var(--card);border:1.5px solid var(--border);cursor:pointer;font-size:16px;padding:4px 10px;border-radius:20px;font-family:inherit;">👁</button>
       <button onclick="openModal('modalBackup')" style="background:var(--blue-bg);border:1.5px solid var(--blue);color:var(--blue);cursor:pointer;font-size:13px;font-weight:700;padding:6px 12px;border-radius:20px;font-family:inherit;display:flex;align-items:center;gap:4px;">💾 Yedek</button>
@@ -708,6 +708,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
     <input type="file" id="importFile" accept=".json" style="display:none" onchange="importBackup(event)"/>
     <div class="fg" style="margin-bottom:10px;"><label>🔒 Yedek şifresi (isteğe bağlı)</label><input type="password" id="backupPass" placeholder="Boş bırakırsanız şifresiz yedeklenir" autocomplete="new-password"/>
       <div style="font-size:11px;color:var(--text2);margin-top:4px;">Şifre girerseniz yedek dosyası şifrelenir. Şifreyi unutursanız yedek açılamaz.</div></div>
+    <div id="backupVer" style="font-size:11px;text-align:center;color:var(--text2);margin-bottom:6px;"></div>
     <div id="backupInfo" style="font-size:12px;text-align:center;color:var(--text3);margin-top:8px;"></div>
     <div class="sheet-actions" style="margin-top:1rem;">
       <button class="btn-cancel" style="flex:1" onclick="closeModal('modalBackup')">Kapat</button>
@@ -781,6 +782,8 @@ function togglePrivacy(){
   try{ localStorage.setItem('finans_privacy',privacyOn?'1':'0'); }catch(e){}
   updatePrivacyBtn(); renderAll();
 }
+const APP_VERSION='v5 · 31.10.2026';
+function showVersion(){ const e=document.getElementById('appVer'); if(e) e.textContent='Sürüm '+APP_VERSION; const b=document.getElementById('backupVer'); if(b) b.textContent='Sürüm '+APP_VERSION; }
 function updatePrivacyBtn(){ const b=document.getElementById('privBtn'); if(b) b.textContent=privacyOn?'🙈':'👁'; }
 function fmt(n,dec=2){ if(privacyOn) return '₺•••••'; return '₺'+Number(n).toLocaleString('tr-TR',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
 function fmtNum(n,dec=2){ return Number(n).toLocaleString('tr-TR',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
@@ -2500,6 +2503,7 @@ function requestPersistentStorage(){
   try{ if(navigator.storage && navigator.storage.persist){ navigator.storage.persist().catch(()=>{}); } }catch(e){}
 }
 function unlockApp() {
+  showVersion();
   updatePrivacyBtn();
   requestPersistentStorage();
   pinBuffer = '';
