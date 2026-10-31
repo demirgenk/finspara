@@ -813,6 +813,13 @@ let state = {
   altin: [],        // [{id,personId,type,amount,alis,satis}]
 };
 let heroMode = 'anapara'; // 'anapara' | 'netpara'
+let ovView = 'yaklasan'; // 'yaklasan' | 'toplam' | 'kisi'
+function setOvView(v){ ovView=v; renderOverview(); window.scrollTo(0,0); }
+function pickPersonFromSummary(id){ ovView='toplam'; selectPerson(id); goPage('overview'); }
+function ovTabsHtml(){
+  const t=(k,l)=>`<button class="ctrl-tab ${ovView===k?'active':''}" style="padding:9px 4px;font-size:12.5px;" onclick="setOvView('${k}')">${l}</button>`;
+  return `<div style="display:flex;gap:6px;margin-bottom:12px;">${t('yaklasan','📅 Yaklaşan')}${t('toplam','💰 Toplam Para')}${t('kisi','👥 Kişi Özeti')}</div>`;
+}
 let currentPage = 'overview';
 let selectedPerson = 'all'; // 'all' or personId
 let editingId = null;
@@ -853,7 +860,7 @@ function togglePrivacy(){
   try{ localStorage.setItem('finans_privacy',privacyOn?'1':'0'); }catch(e){}
   updatePrivacyBtn(); renderAll();
 }
-const APP_VERSION='v20 · 31.10.2026';
+const APP_VERSION='v21 · 31.10.2026';
 function showVersion(){ const e=document.getElementById('appVer'); if(e) e.textContent='Sürüm '+APP_VERSION; const b=document.getElementById('backupVer'); if(b) b.textContent='Sürüm '+APP_VERSION; }
 function updatePrivacyBtn(){ const b=document.getElementById('privBtn'); if(b) b.textContent=privacyOn?'🙈':'👁'; }
 function fmt(n,dec=2){ if(privacyOn) return '₺•••••'; return '₺'+Number(n).toLocaleString('tr-TR',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
@@ -1005,7 +1012,7 @@ function renderOverview(){
     ? `Nakit ${fmt(totalNakit)} — Borç ${fmt(totalBorc)}`
     : 'Mevduat + Net Nakit + Döviz + Altın';
 
-  page.innerHTML=ozetBannerHtml()+backupBannerHtml()+`
+  const totalsHtml=`
     <div class="summary-hero" style="${heroStyle()}">
       <button class="hero-pal-btn" onclick="toggleHeroPal(event)" aria-label="Renk seç">🎨</button>
       <div class="hero-label">${heroLabel}</div>
@@ -1078,12 +1085,17 @@ function renderOverview(){
       <div class="val amber">${fmt(toplamVergi)}</div>
       <div class="sub">Şimdiye kadar kesilen stopaj</div>
     </div>
+  `;
+  const upcomingHtml=`
     <div class="upcoming-card">
       <div class="section-title" style="margin:0 0 8px;">📅 Yaklaşan İşlemler (7 Gün)</div>
       ${renderUpcoming(mList, kList)}
-    </div>
-    ${selectedPerson==='all' ? renderPersonSummaries(mList,nList,kList,dList,aList) : ''}
-  `;
+    </div>`;
+  let body;
+  if(ovView==='toplam') body=totalsHtml;
+  else if(ovView==='kisi') body=state.persons.length ? renderPersonSummaries(state.mevduat,state.nakit,state.kredi,state.doviz,state.altin) : `<div class="empty-state"><div class="ei">👥</div><p>Henüz kişi eklenmedi.<br>Yukarıdaki "+ Kişi" düğmesiyle ekleyin.</p></div>`;
+  else body=ozetBannerHtml()+backupBannerHtml()+upcomingHtml;
+  page.innerHTML=ovTabsHtml()+body;
 }
 
 function renderUpcoming(mList, kList) {
@@ -1187,7 +1199,7 @@ function renderPersonSummaries(mList,nList,kList,dList,aList){
     let alt=0; pa.forEach(a=>{ alt+=a.amount*midRate(a.alis,a.satis); });
     const net=(birikim+cuzdan)-borc;
     const toplam=mevAna+net+dov+alt;
-    html+=`<div class="acc-card border-green" onclick="selectPerson('${p.id}');goPage('overview')">
+    html+=`<div class="acc-card border-green" onclick="pickPersonFromSummary('${p.id}')">
       <div class="acc-head">
         <div><div class="acc-title">${p.emoji||'👤'} ${p.name}</div><div class="acc-sub">Toplam Varlık: ${fmt(toplam)}</div></div>
         <button class="icon-btn" onclick="event.stopPropagation();deletePerson('${p.id}')">🗑</button>
