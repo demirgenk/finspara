@@ -21,6 +21,7 @@
   --amber: #B7740A;
   --amber-bg: #FFF3CD;
   --yellow: #c8a000;
+  --yellow-t: #6b5200;
   --yellow-bg: #fffde0;
   --yellow-border: #f0d000;
   --blue: #2563EB;
@@ -38,7 +39,7 @@
     --bg:#111;--card:#1c1c1e;--text:#f0f0f0;--text2:#888;--text3:#555;
     --border:#2c2c2e;--green-bg:#0a2e22;--red-bg:#2e0d0d;--red:#e86e6d;--red-light:#f4a0a0;--amber-bg:#2e1f00;--text3:#777;--text2:#aaa;
     --blue-bg:#0d1a3a;--purple-bg:#1a0f33;--gold-bg:#2e1f00;
-    --yellow:#f5d000;--yellow-bg:#2a2400;--yellow-border:#c8a800;
+    --yellow:#f5d000;--yellow-t:#f5d000;--yellow-bg:#2a2400;--yellow-border:#c8a800;
   }
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -154,7 +155,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .tag.g{background:var(--green-bg);color:var(--green);}
 .tag.r{background:var(--red-bg);color:var(--red);}
 .tag.a{background:var(--amber-bg);color:var(--amber);}
-.tag.y{background:var(--yellow-bg);color:var(--yellow);border:1px solid var(--yellow-border);}
+.tag.y{background:var(--yellow-bg);color:var(--yellow-t);border:1px solid var(--yellow-border);}
 
 .add-card-btn{width:100%;padding:12px;background:transparent;border:2px dashed var(--border);border-radius:var(--radius);color:var(--text3);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;font-family:inherit;font-weight:600;margin-bottom:8px;}
 .add-card-btn:active{opacity:.7;}
@@ -275,6 +276,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .kredi-sum-right{text-align:right;flex-shrink:0;}
 .kredi-sum-borc{font-size:17px;font-weight:700;color:var(--red-light);}
 .kredi-sum-odeme{font-size:12px;font-weight:600;margin-top:2px;}
+.kredi-summary,.mev-summary,.asset-summary{min-height:72px;}
+.mev-sum-anapara{font-size:17px;}
+.mev-sum-vade{font-size:12px;font-weight:600;margin-top:2px;}
 .kredi-chevron{font-size:14px;color:var(--text3);transition:transform .25s;flex-shrink:0;}
 .kredi-card.open .kredi-chevron{transform:rotate(180deg);}
 .kredi-detail{display:none;background:var(--card);border:1.5px solid var(--border);border-top:none;border-radius:0 0 var(--radius) var(--radius);padding:0 14px 12px;}
@@ -299,7 +303,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 @media (prefers-reduced-motion:reduce){.mev-summary.s-urgent{animation:none;}}
 .mev-badge{display:inline-block;margin-left:4px;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;white-space:nowrap;vertical-align:middle;}
 .mev-badge.b-active{background:var(--green-bg);color:var(--green);}
-.mev-badge.b-soon{background:var(--yellow);color:#3a3000;}
+.mev-badge.b-soon{background:#f5d000;color:#2b2200;}
+.mev-summary.s-soon .mev-sum-meta,.mev-summary.s-soon .mev-sum-vade{color:var(--yellow-t);}
 .mev-badge.b-urgent,.mev-badge.b-expired{background:var(--red);color:#fff;font-size:12px;}
 .mev-sum-progress{display:none;}
 .mev-sum-progress div{height:100%;background:var(--st);opacity:.85;}
@@ -307,7 +312,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .mev-alert.soon{background:var(--yellow-bg);border-color:var(--yellow-border);}
 .mev-alert-t{font-size:14px;font-weight:700;color:var(--red);margin-bottom:4px;}
 .mev-alert.soon .mev-alert-t{color:var(--amber);}
-@media(prefers-color-scheme:dark){.mev-alert-t{color:var(--red-light);}.mev-alert.soon .mev-alert-t{color:var(--yellow);}}
+@media(prefers-color-scheme:dark){.mev-alert-t{color:var(--red-light);}.mev-alert.soon .mev-alert-t{color:var(--yellow-t);}}
 .mev-alert-i{font-size:13px;color:var(--text);padding:2px 0;}
 .mev-sum-left{flex:1;min-width:0;}
 .mev-sum-name{font-size:14px;font-weight:700;color:var(--text);}
@@ -838,7 +843,7 @@ function togglePrivacy(){
   try{ localStorage.setItem('finans_privacy',privacyOn?'1':'0'); }catch(e){}
   updatePrivacyBtn(); renderAll();
 }
-const APP_VERSION='v16 · 31.10.2026';
+const APP_VERSION='v17 · 31.10.2026';
 function showVersion(){ const e=document.getElementById('appVer'); if(e) e.textContent='Sürüm '+APP_VERSION; const b=document.getElementById('backupVer'); if(b) b.textContent='Sürüm '+APP_VERSION; }
 function updatePrivacyBtn(){ const b=document.getElementById('privBtn'); if(b) b.textContent=privacyOn?'🙈':'👁'; }
 function fmt(n,dec=2){ if(privacyOn) return '₺•••••'; return '₺'+Number(n).toLocaleString('tr-TR',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
@@ -1005,7 +1010,7 @@ function renderOverview(){
       </div>
       <div class="mini-card">
         <div class="lbl">Vade Sonu Mevduat</div>
-        <div class="val" style="color:var(--yellow)">${fmt(vadeSonuAnapara)}</div>
+        <div class="val" style="color:var(--yellow-t)">${fmt(vadeSonuAnapara)}</div>
         <div class="sub">+${fmt(mevduatKazancFarki)} kazanç</div>
       </div>
     </div>
@@ -1241,7 +1246,7 @@ function renderKredi(){
     list.forEach(k=>{ if(daysLeft(k.kesimTarih)<0) kesimGecenBorc+=k.borc||0; });
     html+=`<div class="grid3" style="margin-bottom:10px;">
       <div class="mini-card"><div class="lbl">Toplam Borç</div><div class="val" style="color:var(--red);">${fmt(totalBorc)}</div></div>
-      <div class="mini-card"><div class="lbl">Kesilen Borç</div><div class="val" style="color:var(--yellow);">${fmt(kesimGecenBorc)}</div><div class="sub">Ödeme bekliyor</div></div>
+      <div class="mini-card"><div class="lbl">Kesilen Borç</div><div class="val" style="color:var(--yellow-t);">${fmt(kesimGecenBorc)}</div><div class="sub">Ödeme bekliyor</div></div>
       <div class="mini-card"><div class="lbl">Günlük Borç</div><div class="val amber">${fmt(gunlukBorc)}</div><div class="sub">Aylık ort.</div></div>
     </div>`;
     list.forEach(k=>{
@@ -1325,7 +1330,7 @@ function renderMevduat(){
   } else {
     html+=`<div class="grid3" style="margin-bottom:10px;">
       <div class="mini-card"><div class="lbl">Toplam Anapara</div><div class="val">${fmt(toplamAnapara)}</div></div>
-      <div class="mini-card"><div class="lbl">Vade Sonu Toplam</div><div class="val" style="color:var(--yellow);">${fmt(toplamVadeSonu)}</div></div>
+      <div class="mini-card"><div class="lbl">Vade Sonu Toplam</div><div class="val" style="color:var(--yellow-t);">${fmt(toplamVadeSonu)}</div></div>
       <div class="mini-card"><div class="lbl">Günlük Net</div><div class="val green">${fmt(toplamGunluk)}</div></div>
     </div>`;
     list.forEach(m=>{
@@ -1357,7 +1362,7 @@ function renderMevduat(){
           <div class="acc-row"><span class="key">Net Kazanç (şimdiye)</span><span class="v green">${fmt(c.netEl)}</span></div>
           <div class="acc-row"><span class="key">Günlük Net Kazanç</span><span class="v green">${fmt(c.dailyNet)}</span></div>
           <div class="acc-row"><span class="key">Vade Sonu Net Kazanç</span><span class="v green">${fmt(c.netTot)}</span></div>
-          <div class="acc-row"><span class="key">Vade Sonu Anapara</span><span class="v" style="color:var(--yellow);font-size:16px;font-weight:700;">${fmt(vadeSonuAnapara)}</span></div>
+          <div class="acc-row"><span class="key">Vade Sonu Anapara</span><span class="v" style="color:var(--yellow-t);font-size:16px;font-weight:700;">${fmt(vadeSonuAnapara)}</span></div>
           <div class="acc-row"><span class="key">Başlangıç</span><span class="v">${new Date(m.startDate).toLocaleDateString('tr-TR')}</span></div>
           <div class="acc-row"><span class="key">Vade Sonu</span><span class="v">${vadeTarih}</span></div>
           <div class="acc-row" style="border-bottom:none;padding-top:10px;"><button class="icon-btn" style="width:100%;justify-content:center;font-size:14px;font-weight:700;background:var(--amber-bg);border-radius:10px;height:40px;color:var(--amber);" onclick="openMevKapat('${m.id}')">🔒 Kapat / Başka bankaya taşı</button></div>
