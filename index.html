@@ -1,0 +1,2810 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>Finans Takibi</title>
+<style>
+:root {
+  --bg: #f2f2f7;
+  --card: #fff;
+  --text: #1a1a1a;
+  --text2: #666;
+  --text3: #888;
+  --border: #e8e8e8;
+  --green: #1D9E75;
+  --green-bg: #E1F5EE;
+  --green-dark: #085041;
+  --red: #e86e6d;
+  --red-light: #f4a0a0;
+  --red-bg: #FDECEA;
+  --amber: #B7740A;
+  --amber-bg: #FFF3CD;
+  --yellow: #c8a000;
+  --yellow-bg: #fffde0;
+  --yellow-border: #f0d000;
+  --blue: #2563EB;
+  --blue-light: #60a5fa;
+  --blue-bg: #EFF6FF;
+  --purple: #7C3AED;
+  --purple-bg: #F5F3FF;
+  --gold: #B7860A;
+  --gold-bg: #FFFBEB;
+  --radius: 16px;
+  --shadow: 0 1px 4px rgba(0,0,0,0.07);
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#111;--card:#1c1c1e;--text:#f0f0f0;--text2:#888;--text3:#555;
+    --border:#2c2c2e;--green-bg:#0a2e22;--red-bg:#2e0d0d;--red:#e86e6d;--red-light:#f4a0a0;--amber-bg:#2e1f00;--text3:#777;--text2:#aaa;
+    --blue-bg:#0d1a3a;--purple-bg:#1a0f33;--gold-bg:#2e1f00;
+    --yellow:#f5d000;--yellow-bg:#2a2400;--yellow-border:#c8a800;
+  }
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+.app{max-width:480px;margin:0 auto;padding:1rem 1rem 6rem;}
+
+/* KİLİT EKRANI */
+#lockScreen{display:none;position:fixed;inset:0;z-index:9999;background:linear-gradient(160deg,#0f4c35 0%,#1a1a2e 100%);flex-direction:column;align-items:center;justify-content:center;padding:2rem;}
+#lockScreen.visible{display:flex;}
+.lock-logo{font-size:56px;margin-bottom:8px;}
+.lock-title{font-size:22px;font-weight:700;color:#fff;margin-bottom:4px;}
+.lock-sub{font-size:13px;color:rgba(255,255,255,0.55);margin-bottom:2.5rem;}
+.pin-dots{display:flex;gap:14px;margin-bottom:2rem;}
+.pin-dot{width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,0.4);background:transparent;transition:all .15s;}
+.pin-dot.filled{background:#fff;border-color:#fff;}
+.pin-dot.error{background:#E24B4A;border-color:#E24B4A;}
+.pin-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;width:100%;max-width:280px;}
+.pin-key{padding:18px;border:none;border-radius:14px;background:rgba(255,255,255,0.1);color:#fff;font-size:20px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .1s;backdrop-filter:blur(10px);}
+.pin-key:active{background:rgba(255,255,255,0.25);transform:scale(.95);}
+.pin-key.del{background:rgba(255,255,255,0.06);font-size:18px;}
+.pin-key.empty{background:transparent;pointer-events:none;}
+.pin-error{color:#ff6b6b;font-size:13px;margin-top:1rem;min-height:20px;text-align:center;}
+.pin-forgot{color:rgba(255,255,255,0.45);font-size:13px;margin-top:1.5rem;cursor:pointer;text-decoration:underline;background:none;border:none;font-family:inherit;}
+.pin-forgot:active{opacity:.7;}
+.lock-setup{width:100%;max-width:320px;}
+.lock-setup-step{display:none;}
+.lock-setup-step.active{display:block;}
+.lock-setup h3{color:#fff;font-size:16px;font-weight:600;text-align:center;margin-bottom:1.5rem;}
+.lock-input{width:100%;padding:14px;border-radius:12px;border:1.5px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;font-size:18px;text-align:center;font-family:inherit;letter-spacing:6px;margin-bottom:12px;}
+.lock-input::placeholder{letter-spacing:0;color:rgba(255,255,255,0.3);font-size:14px;}
+.lock-input:focus{outline:none;border-color:rgba(255,255,255,0.5);}
+.lock-btn{width:100%;padding:14px;border-radius:12px;border:none;background:#1D9E75;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px;}
+.lock-btn:active{background:#0F6E56;}
+.lock-btn.secondary{background:rgba(255,255,255,0.1);}
+.setup-select{width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;font-size:14px;font-family:inherit;margin-bottom:12px;-webkit-appearance:none;}
+.setup-select option{background:#1a1a2e;color:#fff;}
+
+/* NAV TABS */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);display:flex;justify-content:space-around;padding:8px 0 max(8px,env(safe-area-inset-bottom));z-index:100;max-width:480px;margin:0 auto;}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:var(--text3);cursor:pointer;padding:4px 0;border:none;background:none;font-family:inherit;}
+.nav-item.active{color:var(--green);}
+.nav-icon{font-size:22px;}
+
+/* HEADER */
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;}
+.header h1{font-size:20px;font-weight:700;color:var(--text);}
+.save-badge{font-size:11px;padding:4px 10px;border-radius:20px;display:flex;align-items:center;gap:5px;font-weight:500;}
+.save-badge.ok{background:var(--green-bg);color:var(--green);}
+.save-badge.saving{background:var(--amber-bg);color:var(--amber);}
+.save-badge.err{background:var(--red-bg);color:var(--red);}
+.save-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+
+/* PERSON TABS */
+.person-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:1rem;scrollbar-width:none;}
+.person-row::-webkit-scrollbar{display:none;}
+.person-chip{flex-shrink:0;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;border:2px solid var(--border);background:var(--card);color:var(--text2);white-space:nowrap;}
+.person-chip.active{border-color:var(--green);background:var(--green-bg);color:var(--green);}
+.person-chip.all{border-color:var(--blue);background:var(--blue-bg);color:var(--blue);}
+.person-chip.all.active{border-color:var(--blue);background:var(--blue);color:#fff;}
+.add-person-btn{flex-shrink:0;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;border:2px dashed var(--border);background:transparent;color:var(--text3);white-space:nowrap;font-family:inherit;}
+
+/* SUMMARY CARDS */
+.summary-hero{background:linear-gradient(135deg,#1D9E75,#085041);border-radius:var(--radius);padding:1.25rem;margin-bottom:10px;box-shadow:0 4px 16px rgba(29,158,117,0.25);}
+.hero-label{font-size:12px;color:rgba(255,255,255,0.7);font-weight:500;margin-bottom:4px;}
+.hero-val{font-size:30px;font-weight:700;color:#fff;}
+.hero-sub{font-size:12px;color:rgba(255,255,255,0.8);margin-top:4px;}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;}
+.mini-card{background:var(--card);border-radius:14px;padding:12px;box-shadow:var(--shadow);}
+.mini-card .lbl{font-size:11px;color:var(--text2);font-weight:700;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:5px;}
+.mini-card .val{font-size:16px;font-weight:700;color:var(--text);}
+.mini-card .val.green{color:var(--green);}
+.mini-card .val.red{color:var(--red);}
+.mini-card .val.amber{color:var(--amber);}
+.mini-card .val.blue{color:var(--blue);}
+.mini-card .val.gold{color:var(--gold);}
+.mini-card .sub{font-size:12px;color:var(--text2);margin-top:3px;font-weight:500;}
+
+.section-title{font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.06em;margin:1rem 0 10px;}
+
+/* ACCOUNT CARDS */
+.acc-card{background:var(--card);border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:10px;box-shadow:var(--shadow);border:1.5px solid transparent;}
+.acc-card.border-green{border-color:var(--green);}
+.acc-card.border-green-bg{border-color:var(--green);background:var(--green-bg);}
+.acc-card.border-red{border-color:var(--red);}
+.acc-card.border-red-bg{border-color:var(--red);background:var(--red-bg);}
+.acc-card.border-amber{border-color:var(--amber);}
+.acc-card.border-yellow{border-color:var(--yellow-border);background:var(--yellow-bg);}
+.acc-card.border-blue{border-color:var(--blue);}
+.acc-card.border-gold{border-color:var(--gold);}
+
+.acc-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.acc-title{font-size:15px;font-weight:700;color:var(--text);}
+.acc-sub{font-size:12px;color:var(--text2);margin-top:2px;}
+.acc-btns{display:flex;gap:4px;}
+.icon-btn{background:var(--bg);border:none;cursor:pointer;width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--text2);}
+.icon-btn:active{opacity:.7;}
+
+.acc-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:14px;}
+.acc-row:last-child{border-bottom:none;padding-bottom:0;}
+.acc-row .key{color:var(--text2);}
+.acc-row .v{font-weight:700;color:var(--text);}
+.acc-row .v.green{color:var(--green);}
+.acc-row .v.red{color:var(--red);}
+.acc-row .v.amber{color:var(--amber);}
+
+.bar-wrap{height:4px;background:var(--bg);border-radius:2px;overflow:hidden;margin:8px 0;}
+.bar-fill{height:100%;border-radius:2px;background:var(--green);}
+
+.tag{font-size:11px;padding:2px 9px;border-radius:20px;font-weight:600;display:inline-block;}
+.tag.g{background:var(--green-bg);color:var(--green);}
+.tag.r{background:var(--red-bg);color:var(--red);}
+.tag.a{background:var(--amber-bg);color:var(--amber);}
+.tag.y{background:var(--yellow-bg);color:var(--yellow);border:1px solid var(--yellow-border);}
+
+.add-card-btn{width:100%;padding:12px;background:transparent;border:2px dashed var(--border);border-radius:var(--radius);color:var(--text3);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;font-family:inherit;font-weight:600;margin-bottom:8px;}
+.add-card-btn:active{opacity:.7;}
+
+/* MODAL */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:300;align-items:flex-end;justify-content:center;}
+.overlay.open{display:flex;}
+.sheet{background:var(--card);border-radius:24px 24px 0 0;padding:1.5rem 1.25rem 2rem;width:100%;max-width:480px;max-height:92vh;overflow-y:auto;}
+.handle{width:44px;height:5px;background:var(--border);border-radius:3px;margin:0 auto 1.25rem;}
+.sheet h2{font-size:18px;font-weight:700;color:var(--text);margin-bottom:1.25rem;}
+.fg{margin-bottom:14px;}
+.fg label{font-size:13px;color:var(--text2);display:block;margin-bottom:6px;font-weight:600;}
+.fg input,.fg select{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;font-size:15px;background:var(--bg);color:var(--text);font-family:inherit;-webkit-appearance:none;}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--green);background:var(--card);}
+.fg .hint{font-size:11px;color:var(--text3);margin-top:4px;}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.sheet-actions{display:flex;gap:10px;margin-top:1.5rem;}
+.btn-cancel{flex:1;padding:14px;background:var(--bg);border:none;border-radius:12px;font-size:15px;color:var(--text2);cursor:pointer;font-family:inherit;font-weight:600;}
+.btn-ok{flex:2;padding:14px;background:var(--green);border:none;border-radius:12px;font-size:15px;color:#fff;cursor:pointer;font-family:inherit;font-weight:700;}
+.btn-ok:active{background:#0F6E56;}
+.btn-fetch{width:100%;padding:11px;background:var(--blue-bg);border:1.5px solid var(--blue);border-radius:12px;font-size:14px;color:var(--blue);cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:14px;}
+.btn-fetch:active{opacity:.7;}
+.btn-fetch.loading{opacity:.6;pointer-events:none;}
+.kur-info{font-size:11px;color:var(--text3);text-align:left;margin-top:4px;margin-bottom:0;}
+.kur-info.ok{color:var(--green);}
+.kur-info.err{color:var(--red);}
+.kur-badges{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;}
+.kur-badge{font-size:11px;padding:4px 10px;border-radius:20px;background:var(--blue-bg);color:var(--blue);font-weight:600;}
+.kur-badge.gold-badge{background:var(--gold-bg);color:var(--gold);}
+.btn-danger{flex:1;padding:14px;background:var(--red-bg);border:none;border-radius:12px;font-size:15px;color:var(--red);cursor:pointer;font-family:inherit;font-weight:600;}
+
+/* DETAIL */
+.big-box{text-align:center;padding:1.25rem;border-radius:14px;margin-bottom:1rem;}
+.big-box .bl{font-size:13px;font-weight:600;margin-bottom:5px;color:inherit;}
+.big-box .bv{font-size:28px;font-weight:800;color:inherit;}
+.big-box.g{background:var(--green);color:#fff;}
+.big-box.r{background:var(--red-bg);color:var(--red);}
+.det-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);font-size:14px;}
+.det-row:last-child{border-bottom:none;}
+.det-row .dl{color:var(--text2);}
+.det-row .dv{font-weight:700;color:var(--text);}
+.det-row .dv.g{color:var(--green);}
+.det-row .dv.r{color:var(--red);}
+
+.empty-state{text-align:center;padding:2.5rem 1rem;color:var(--text3);}
+.empty-state .ei{font-size:44px;margin-bottom:12px;}
+.empty-state p{font-size:14px;line-height:1.6;}
+
+/* page sections */
+.page{display:none;}
+.page.active{display:block;}
+/* KONTROL SAYFASI */
+.ctrl-period-tabs{display:flex;gap:8px;margin-bottom:1rem;}
+.ctrl-tab{flex:1;padding:8px;border-radius:20px;border:1.5px solid var(--border);background:var(--card);color:var(--text2);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;text-align:center;}
+.ctrl-tab.active{background:var(--green);border-color:var(--green);color:#fff;}
+.ctrl-section{margin-bottom:1.25rem;}
+.ctrl-section-title{font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.ctrl-row{background:var(--card);border-radius:12px;padding:11px 14px;margin-bottom:6px;box-shadow:var(--shadow);}
+.ctrl-row-label{font-size:13px;color:var(--text2);margin-bottom:6px;font-weight:500;}
+.ctrl-compare{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.ctrl-val-box{text-align:center;flex:1;}
+.ctrl-val-box .cv-lbl{font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;margin-bottom:3px;}
+.ctrl-val-box .cv-val{font-size:14px;font-weight:700;color:var(--text);}
+.ctrl-arrow{font-size:18px;color:var(--text3);}
+.ctrl-diff{text-align:center;flex-shrink:0;}
+.ctrl-diff .cd-val{font-size:13px;font-weight:700;}
+.ctrl-diff .cd-val.up{color:var(--green);}
+.ctrl-diff .cd-val.down{color:var(--red);}
+.ctrl-diff .cd-val.flat{color:var(--text3);}
+.ctrl-diff .cd-pct{font-size:11px;color:var(--text3);margin-top:1px;}
+.ctrl-no-data{text-align:center;padding:3rem 1rem;color:var(--text3);}
+.ctrl-no-data .ei{font-size:44px;margin-bottom:12px;}
+.ctrl-save-btn{width:100%;padding:12px;background:var(--green-bg);border:1.5px solid var(--green);border-radius:12px;color:var(--green);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:1rem;display:flex;align-items:center;justify-content:center;gap:6px;}
+.ctrl-save-btn:active{opacity:.7;}
+.ctrl-last-save{font-size:12px;color:var(--text3);text-align:center;margin-bottom:1rem;}
+
+/* ELLE KUR GÜNCELLE */
+.btn-kur-manual{width:100%;padding:11px;background:var(--blue-bg);border:1.5px solid var(--blue);border-radius:var(--radius);color:var(--blue-light);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:6px;}
+.btn-kur-manual:active{opacity:.7;}
+.kur-edit-row{background:var(--bg);border-radius:12px;padding:10px 12px;margin-bottom:10px;}
+.kur-edit-row .ker-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px;}
+.kur-edit-row .frow{margin-bottom:0;}
+.kur-edit-row label{font-size:11px;color:var(--text2);display:block;margin-bottom:4px;font-weight:600;}
+.kur-edit-row input{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:15px;background:var(--card);color:var(--text);font-family:inherit;-webkit-appearance:none;}
+.kur-edit-row input:focus{outline:none;border-color:var(--green);}
+
+.kur-btn-row{display:flex;gap:8px;margin-bottom:8px;}
+.kur-btn-row .btn-kur-manual{flex:1;width:auto;margin-bottom:0;}
+.btn-kur-manual.loading{opacity:.6;pointer-events:none;}
+.kur-auto-toggle{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);margin-bottom:10px;cursor:pointer;}
+.kur-auto-toggle input{width:16px;height:16px;accent-color:var(--green);}
+.toast{position:fixed;top:14px;left:50%;transform:translateX(-50%);background:var(--green);color:#fff;padding:10px 16px;border-radius:12px;font-size:13px;font-weight:700;z-index:10000;box-shadow:0 4px 16px rgba(0,0,0,.3);max-width:90%;text-align:center;}
+.toast.err{background:#b04444;}
+
+/* SWIPE ANİMASYON */
+.page.slide-in-right{animation:slideInRight .22s ease;}
+.page.slide-in-left{animation:slideInLeft .22s ease;}
+@keyframes slideInRight{from{opacity:0;transform:translateX(40px);}to{opacity:1;transform:translateX(0);}}
+@keyframes slideInLeft{from{opacity:0;transform:translateX(-40px);}to{opacity:1;transform:translateX(0);}}
+/* HERO SWITCH */
+.hero-switch{display:flex;align-items:center;gap:8px;margin-top:10px;}
+.hero-switch-lbl{font-size:11px;color:rgba(255,255,255,0.65);font-weight:500;}
+.switch-wrap{position:relative;width:40px;height:22px;cursor:pointer;}
+.switch-wrap input{opacity:0;width:0;height:0;position:absolute;}
+.switch-slider{position:absolute;inset:0;background:rgba(255,255,255,0.3);border-radius:22px;transition:.25s;}
+.switch-slider:before{content:'';position:absolute;width:16px;height:16px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.25s;}
+.switch-wrap input:checked + .switch-slider{background:rgba(255,255,255,0.55);}
+.switch-wrap input:checked + .switch-slider:before{transform:translateX(18px);}
+/* AÇILIR KAPANIR KARTLAR (KREDİ + MEVDUAT) */
+.kredi-card{border-radius:var(--radius);margin-bottom:10px;overflow:hidden;box-shadow:var(--shadow);}
+.kredi-summary{display:flex;align-items:center;gap:10px;padding:13px 14px;cursor:pointer;background:var(--card);border:1.5px solid transparent;border-radius:var(--radius);transition:border-radius .25s;}
+.kredi-card.open .kredi-summary{border-radius:var(--radius) var(--radius) 0 0;}
+.kredi-summary.border-red{border-color:var(--red);}
+.kredi-summary.border-green-bg{border-color:var(--green);background:var(--green-bg);}
+.kredi-sum-left{flex:1;min-width:0;}
+.kredi-sum-name{font-size:14px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.kredi-sum-meta{font-size:12px;color:var(--text2);margin-top:2px;}
+.kredi-sum-right{text-align:right;flex-shrink:0;}
+.kredi-sum-borc{font-size:17px;font-weight:700;color:var(--red-light);}
+.kredi-sum-odeme{font-size:12px;font-weight:600;margin-top:2px;}
+.kredi-chevron{font-size:14px;color:var(--text3);transition:transform .25s;flex-shrink:0;}
+.kredi-card.open .kredi-chevron{transform:rotate(180deg);}
+.kredi-detail{display:none;background:var(--card);border:1.5px solid var(--border);border-top:none;border-radius:0 0 var(--radius) var(--radius);padding:0 14px 12px;}
+.kredi-card.open .kredi-detail{display:block;}
+.kredi-detail .acc-row{padding:9px 0;}
+
+/* MEVDUAT KART */
+.mev-card{border-radius:var(--radius);margin-bottom:10px;overflow:hidden;box-shadow:var(--shadow);}
+.mev-summary{display:flex;align-items:center;gap:10px;padding:13px 14px;cursor:pointer;background:var(--card);border:1.5px solid transparent;border-radius:var(--radius);transition:border-radius .25s;}
+.mev-card.open .mev-summary{border-radius:var(--radius) var(--radius) 0 0;}
+.mev-summary.b-green{border-color:var(--green);}
+.mev-summary.b-amber{border-color:var(--amber);}
+.mev-summary.b-red{border-color:var(--red);}
+.mev-summary.b-red-bg{border-color:var(--red);background:var(--red-bg);}
+.mev-sum-left{flex:1;min-width:0;}
+.mev-sum-name{font-size:14px;font-weight:700;color:var(--text);}
+.mev-sum-meta{font-size:12px;color:var(--text2);margin-top:2px;}
+.mev-sum-right{text-align:right;flex-shrink:0;}
+.mev-sum-anapara{font-size:16px;font-weight:700;color:var(--text);}
+.mev-sum-vade{font-size:12px;margin-top:2px;font-weight:600;}
+.mev-sum-kalan{font-size:13px;font-weight:700;margin-top:1px;}
+.mev-chevron{font-size:14px;color:var(--text3);transition:transform .25s;flex-shrink:0;}
+.mev-card.open .mev-chevron{transform:rotate(180deg);}
+.mev-detail{display:none;background:var(--card);border:1.5px solid var(--border);border-top:none;border-radius:0 0 var(--radius) var(--radius);padding:0 14px 12px;}
+.mev-card.open .mev-detail{display:block;}
+.mev-detail .acc-row{padding:9px 0;}
+.mev-progress{height:4px;background:var(--bg);border-radius:2px;overflow:hidden;margin:4px 0 8px;}
+.mev-progress-fill{height:100%;background:var(--green);border-radius:2px;}
+
+/* DÖVİZ / ALTIN KART */
+.asset-card{border-radius:var(--radius);margin-bottom:10px;overflow:hidden;box-shadow:var(--shadow);}
+.asset-summary{display:flex;align-items:center;gap:10px;padding:13px 14px;cursor:pointer;background:var(--card);border:1.5px solid transparent;border-radius:var(--radius);transition:border-radius .25s;}
+.asset-card.open .asset-summary{border-radius:var(--radius) var(--radius) 0 0;}
+.asset-summary.b-blue{border-color:var(--blue);}
+.asset-summary.b-gold{border-color:var(--gold);}
+.asset-summary.b-green{border-color:var(--green);}
+.asset-sum-icon{font-size:28px;flex-shrink:0;}
+.asset-sum-left{flex:1;min-width:0;}
+.asset-sum-name{font-size:14px;font-weight:700;color:var(--text);}
+.asset-sum-meta{font-size:12px;color:var(--text2);margin-top:2px;}
+.asset-sum-right{text-align:right;flex-shrink:0;}
+.asset-sum-tl{font-size:17px;font-weight:700;}
+.asset-sum-miktar{font-size:12px;color:var(--text2);margin-top:2px;font-weight:500;}
+.asset-chevron{font-size:14px;color:var(--text3);transition:transform .25s;flex-shrink:0;}
+.asset-card.open .asset-chevron{transform:rotate(180deg);}
+.asset-detail{display:none;background:var(--card);border:1.5px solid var(--border);border-top:none;border-radius:0 0 var(--radius) var(--radius);padding:0 14px 12px;}
+.asset-card.open .asset-detail{display:block;}
+.asset-detail .acc-row{padding:9px 0;}
+
+/* AÇILIŞ UYARI MODALI */
+.alert-modal{background:var(--card);border-radius:24px 24px 0 0;padding:1.5rem 1.25rem 2rem;width:100%;max-width:480px;max-height:85vh;overflow-y:auto;}
+.alert-item{display:flex;align-items:flex-start;gap:12px;padding:12px;border-radius:14px;margin-bottom:10px;}
+.alert-item.danger{background:var(--red-bg);border:1.5px solid var(--red);}
+.alert-item.warning{background:var(--amber-bg);border:1.5px solid var(--amber);}
+.alert-item.mevduat{background:var(--green-bg);border:1.5px solid var(--green);}
+.alert-item-icon{font-size:24px;flex-shrink:0;margin-top:1px;}
+.alert-item-body{flex:1;}
+.alert-item-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:3px;}
+.alert-item-sub{font-size:12px;color:var(--text2);line-height:1.5;}
+.alert-item-right{flex-shrink:0;text-align:right;}
+.alert-item-amount{font-size:14px;font-weight:700;color:var(--text);}
+.alert-item-days{font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;display:inline-block;margin-top:3px;}
+.alert-item-days.red{background:var(--red);color:#fff;}
+.alert-item-days.amber{background:var(--amber);color:#fff;}
+.alert-item-days.green{background:var(--green);color:#fff;}
+.alert-odendi-btn{margin-top:8px;padding:5px 12px;border-radius:20px;border:none;background:var(--green);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
+.alert-odendi-btn:active{opacity:.7;}
+.alert-header{display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;}
+.alert-header-icon{font-size:28px;}
+.alert-header-text h2{font-size:17px;font-weight:700;color:var(--text);margin:0;}
+.alert-header-text p{font-size:12px;color:var(--text2);margin:2px 0 0;}
+
+/* YAKLASAN İŞLEMLER */
+.upcoming-card{background:var(--card);border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:10px;box-shadow:var(--shadow);}
+.upcoming-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);}
+.upcoming-item:last-child{border-bottom:none;padding-bottom:0;}
+.upcoming-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.upcoming-icon.mev{background:var(--green-bg);}
+.upcoming-icon.krd{background:var(--red-bg);}
+.upcoming-icon.krd-kesim{background:var(--yellow-bg);}
+.upcoming-body{flex:1;min-width:0;}
+.upcoming-name{font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.upcoming-sub{font-size:12px;color:var(--text2);margin-top:1px;font-weight:500;}
+.upcoming-right{text-align:right;flex-shrink:0;}
+.upcoming-days{font-size:12px;font-weight:700;}
+.upcoming-days.d0{color:var(--red);}
+.upcoming-days.d1{color:var(--red);}
+.upcoming-days.d3{color:var(--amber);}
+.upcoming-days.d7{color:var(--text2);}
+.upcoming-amount{font-size:12px;color:var(--text2);margin-top:1px;font-weight:600;}
+.upcoming-empty{text-align:center;padding:1.5rem;color:var(--text3);font-size:13px;}
+
+/* BACKUP BUTTONS */
+.backup-row{display:flex;gap:8px;margin-bottom:1rem;}
+.btn-backup{flex:1;padding:10px;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;border:none;display:flex;align-items:center;justify-content:center;gap:5px;}
+.btn-backup.export{background:var(--blue-bg);color:var(--blue);}
+.btn-backup.import{background:var(--green-bg);color:var(--green);}
+</style>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#185FA5"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<link rel="icon" href="icon-192.png"/>
+<link rel="apple-touch-icon" href="icon-192.png"/>
+<script>
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+  window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+}
+</script>
+</head>
+<body>
+<!-- AÇILIŞ UYARI MODALI -->
+<div class="overlay" id="modalAlert">
+  <div class="alert-modal">
+    <div class="handle"></div>
+    <div class="alert-header">
+      <div class="alert-header-icon">🔔</div>
+      <div class="alert-header-text">
+        <h2>Bugünkü Uyarılar</h2>
+        <p id="alertSubTitle">Bekleyen işlemler</p>
+      </div>
+    </div>
+    <div id="alertList"></div>
+    <div style="margin-top:1rem;">
+      <button class="btn-ok" style="width:100%" onclick="closeModal('modalAlert')">Tamam, Anladım</button>
+    </div>
+  </div>
+</div>
+
+<!-- KİLİT EKRANI -->
+<div id="lockScreen">
+  <div class="lock-logo">🔐</div>
+  <div class="lock-title">Finans Takibi</div>
+  <div class="lock-sub" id="lockSub">PIN kodunuzu girin</div>
+  <div class="pin-dots" id="pinDots">
+    <div class="pin-dot" id="dot0"></div>
+    <div class="pin-dot" id="dot1"></div>
+    <div class="pin-dot" id="dot2"></div>
+    <div class="pin-dot" id="dot3"></div>
+    <div class="pin-dot" id="dot4"></div>
+    <div class="pin-dot" id="dot5"></div>
+  </div>
+  <div class="pin-keypad">
+    <button class="pin-key" onclick="pinPress('1')">1</button>
+    <button class="pin-key" onclick="pinPress('2')">2</button>
+    <button class="pin-key" onclick="pinPress('3')">3</button>
+    <button class="pin-key" onclick="pinPress('4')">4</button>
+    <button class="pin-key" onclick="pinPress('5')">5</button>
+    <button class="pin-key" onclick="pinPress('6')">6</button>
+    <button class="pin-key" onclick="pinPress('7')">7</button>
+    <button class="pin-key" onclick="pinPress('8')">8</button>
+    <button class="pin-key" onclick="pinPress('9')">9</button>
+    <button class="pin-key empty"></button>
+    <button class="pin-key" onclick="pinPress('0')">0</button>
+    <button class="pin-key del" onclick="pinDel()">⌫</button>
+  </div>
+  <div class="pin-error" id="pinError"></div>
+  <button class="pin-forgot" id="pinForgotBtn" onclick="showReset()">Şifremi Unuttum</button>
+</div>
+
+<!-- PIN KURULUM MODALI -->
+<div class="overlay" id="modalPinSetup">
+  <div class="sheet" style="background:linear-gradient(160deg,#0f4c35,#1a1a2e);">
+    <div class="handle" style="background:rgba(255,255,255,0.2);"></div>
+    <div class="lock-setup">
+      <!-- Adım 1: PIN uzunluğu seç -->
+      <div class="lock-setup-step active" id="setupStep1">
+        <h3>🔐 PIN Uzunluğu Seçin</h3>
+        <select class="setup-select" id="pinLengthSel">
+          <option value="4">4 haneli PIN</option>
+          <option value="5">5 haneli PIN</option>
+          <option value="6">6 haneli PIN</option>
+        </select>
+        <button class="lock-btn" onclick="setupNext(1)">Devam</button>
+        <button class="lock-btn secondary" onclick="closeModal('modalPinSetup')">İptal</button>
+      </div>
+      <!-- Adım 2: PIN gir -->
+      <div class="lock-setup-step" id="setupStep2">
+        <h3>Yeni PIN Oluşturun</h3>
+        <input class="lock-input" type="password" id="pinInput1" inputmode="numeric" placeholder="PIN girin" maxlength="6"/>
+        <button class="lock-btn" onclick="setupNext(2)">Devam</button>
+      </div>
+      <!-- Adım 3: PIN tekrar -->
+      <div class="lock-setup-step" id="setupStep3">
+        <h3>PIN'i Tekrar Girin</h3>
+        <input class="lock-input" type="password" id="pinInput2" inputmode="numeric" placeholder="PIN tekrar" maxlength="6"/>
+        <button class="lock-btn" onclick="setupNext(3)">Devam</button>
+      </div>
+      <!-- Adım 4: Güvenlik sorusu -->
+      <div class="lock-setup-step" id="setupStep4">
+        <h3>🛡 Güvenlik Sorusu</h3>
+        <select class="setup-select" id="secQuestion">
+          <option value="anne">Annenizin kızlık soyadı nedir?</option>
+          <option value="okul">İlkokul adınız nedir?</option>
+          <option value="sehir">Doğduğunuz şehir?</option>
+          <option value="hayvan">İlk evcil hayvanınızın adı?</option>
+          <option value="araba">İlk arabanızın markası?</option>
+        </select>
+        <input class="lock-input" type="text" id="secAnswer" placeholder="Cevabınız" style="letter-spacing:0;font-size:15px;" maxlength="50"/>
+        <button class="lock-btn" onclick="setupNext(4)">Kaydet</button>
+      </div>
+      <!-- Adım 5: Tamamlandı -->
+      <div class="lock-setup-step" id="setupStep5">
+        <h3>✅ PIN Oluşturuldu!</h3>
+        <p style="color:rgba(255,255,255,0.7);font-size:14px;text-align:center;margin-bottom:1.5rem;">Uygulama artık PIN ile korunuyor.</p>
+        <button class="lock-btn" onclick="closeModal('modalPinSetup')">Tamam</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SIFIRLAMA MODALI -->
+<div class="overlay" id="modalReset">
+  <div class="sheet" style="background:linear-gradient(160deg,#0f4c35,#1a1a2e);">
+    <div class="handle" style="background:rgba(255,255,255,0.2);"></div>
+    <div class="lock-setup" id="resetContent">
+      <h3>🛡 Güvenlik Sorusu</h3>
+      <p id="resetQuestion" style="color:rgba(255,255,255,0.7);font-size:14px;text-align:center;margin-bottom:1rem;"></p>
+      <input class="lock-input" type="text" id="resetAnswer" placeholder="Cevabınız" style="letter-spacing:0;font-size:15px;"/>
+      <button class="lock-btn" onclick="checkReset()">Doğrula</button>
+      <div class="pin-error" id="resetError"></div>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+  <!-- HEADER -->
+  <div class="header">
+    <h1 id="pageTitle">Genel Bakış</h1>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button id="privBtn" onclick="togglePrivacy()" aria-label="Tutarları gizle/göster" style="background:var(--card);border:1.5px solid var(--border);cursor:pointer;font-size:16px;padding:4px 10px;border-radius:20px;font-family:inherit;">👁</button>
+      <button onclick="openModal('modalBackup')" style="background:var(--blue-bg);border:1.5px solid var(--blue);color:var(--blue);cursor:pointer;font-size:13px;font-weight:700;padding:6px 12px;border-radius:20px;font-family:inherit;display:flex;align-items:center;gap:4px;">💾 Yedek</button>
+      <div class="save-badge ok" id="saveBadge"><div class="save-dot"></div><span id="saveText">Kaydedildi</span></div>
+    </div>
+  </div>
+
+  <!-- PERSON TABS (overview page only) -->
+  <div class="person-row" id="personRow"></div>
+
+  <!-- PAGES -->
+  <div id="pageOverview" class="page active"></div>
+  <div id="pageKontrol" class="page"></div>
+  <div id="pageNakit" class="page"></div>
+  <div id="pageKredi" class="page"></div>
+  <div id="pageMevduat" class="page"></div>
+  <div id="pageDoviz" class="page"></div>
+  <div id="pageAltin" class="page"></div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-item active" onclick="goPage('overview')" id="nav-overview"><span class="nav-icon">📊</span>Genel</button>
+  <button class="nav-item" onclick="goPage('kontrol')" id="nav-kontrol"><span class="nav-icon">📈</span>Kontrol</button>
+  <button class="nav-item" onclick="goPage('nakit')" id="nav-nakit"><span class="nav-icon">💵</span>Nakit</button>
+  <button class="nav-item" onclick="goPage('kredi')" id="nav-kredi"><span class="nav-icon">💳</span>Kredi</button>
+  <button class="nav-item" onclick="goPage('mevduat')" id="nav-mevduat"><span class="nav-icon">🏦</span>Mevduat</button>
+  <button class="nav-item" onclick="goPage('doviz')" id="nav-doviz"><span class="nav-icon">💱</span>Döviz</button>
+  <button class="nav-item" onclick="goPage('altin')" id="nav-altin"><span class="nav-icon">🥇</span>Altın</button>
+</nav>
+
+<!-- ===== MODALS ===== -->
+<!-- Person Modal -->
+<div class="overlay" id="modalPerson">
+  <div class="sheet">
+    <div class="handle"></div>
+    <h2 id="personModalTitle">Kişi Ekle</h2>
+    <div class="fg"><label>Ad Soyad</label><input type="text" id="p_name" placeholder="örn. Ahmet Yılmaz"/></div>
+    <div class="fg"><label>Renk / Emoji (opsiyonel)</label><input type="text" id="p_emoji" placeholder="🙂"/></div>
+    <div class="sheet-actions">
+      <button class="btn-cancel" onclick="closeModal('modalPerson')">İptal</button>
+      <button class="btn-ok" onclick="savePerson()">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- Nakit Modal -->
+<div class="overlay" id="modalNakit">
+  <div class="sheet">
+    <div class="handle"></div>
+    <h2>Nakit Hesabı</h2>
+    <div class="fg"><label>Kişi</label><select id="n_person"></select></div>
+    <div class="fg"><label>Birikim Hesabı (₺)</label><input type="number" id="n_birikim" placeholder="50000" step="0.01" inputmode="decimal"/></div>
+    <div class="frow">
+      <div class="fg"><label>Yıllık Faiz Oranı (%)</label><input type="number" id="n_faiz" placeholder="45.5" step="0.01" inputmode="decimal"/></div>
+      <div class="fg"><label>Vergi Oranı (%)</label><input type="number" id="n_vergi" placeholder="15" step="0.01" inputmode="decimal"/><div class="hint">Varsayılan %15</div></div>
+    </div>
+    <div class="fg"><label>Cüzdan (₺)</label><input type="number" id="n_cuzdan" placeholder="5000" step="0.01" inputmode="decimal"/></div>
+    <div class="sheet-actions">
+      <button class="btn-cancel" onclick="closeModal('modalNakit')">İptal</button>
+      <button class="btn-ok" onclick="saveNakit()">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- Kredi Kartı Modal -->
+<div class="overlay" id="modalKredi">
+  <div class="sheet">
+    <div class="handle"></div>
+    <h2 id="krediModalTitle">Kredi Kartı Ekle</h2>
+    <div class="fg"><label>Kişi</label><select id="k_person"></select></div>
+    <div class="fg"><label>Kart Adı / Banka</label><input type="text" id="k_name" placeholder="örn. Garanti Bonus"/></div>
+    <div class="fg"><label>Toplam Borç (₺)</label><input type="number" id="k_borc" placeholder="15000" step="0.01" inputmode="decimal"/></div>
+    <div class="frow">
+      <div class="fg"><label>Hesap Kesim Tarihi</label><input type="date" id="k_kesim"/></div>
+      <div class="fg"><label>Son Ödeme Tarihi</label><input type="date" id="k_odeme"/></div>
+    </div>
+    <label style="display:flex;align-items:center;gap:10px;font-size:14px;margin:4px 0 12px;cursor:pointer;">
+      <input type="checkbox" id="k_dongu" style="width:20px;height:20px;" onchange="document.getElementById('k_taksit_wrap').style.display=this.checked?'block':'none'"/>
+      <span>🔁 Her ay yenile <span style="color:var(--text2);font-size:12px;">(Ödendi deyince kart silinmez, tarihler 1 ay ilerler)</span></span>
+    </label>
+    <div id="k_taksit_wrap" style="display:none;">
+      <div class="frow">
+        <div class="fg"><label>Aylık Taksit (₺)</label><input type="number" id="k_taksit" placeholder="opsiyonel" step="0.01" inputmode="decimal"/></div>
+        <div class="fg"><label>Kalan Taksit (ay)</label><input type="number" id="k_kalan" placeholder="opsiyonel" step="1" inputmode="numeric"/></div>
+      </div>
+      <div style="font-size:11px;color:var(--text2);margin:-4px 0 10px;">Taksit girerseniz her "Ödendi"de kalan ay 1 azalır ve borç aylık taksit tutarına döner; bitince borç 0 olur.</div>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn-cancel" onclick="closeModal('modalKredi')">İptal</button>
+      <button class="btn-ok" onclick="saveKredi()">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- Mevduat Modal -->
+<div class="overlay" id="modalMevduat">
+  <div class="sheet">
+    <div class="handle"></div>
+    <h2 id="mevduatModalTitle">Mevduat Hesabı</h2>
+    <div class="fg"><label>Kişi</label><select id="m_person"></select></div>
+    <div class="fg"><label>Hesap Adı</label><input type="text" id="m_name" placeholder="örn. Garanti Vadeli"/></div>
+    <div class="fg"><label>Banka</label><input type="text" id="m_bank" placeholder="örn. Garanti Bankası"/></div>
+    <div class="fg"><label>Anapara (₺)</label><input type="number" id="m_principal" placeholder="100000" step="0.01" inputmode="decimal"/></div>
+    <div class="frow">
+      <div class="fg"><label>Faiz Oranı (%)</label><input type="number" id="m_rate" placeholder="45.5" step="0.01" inputmode="decimal"/></div>
+      <div class="fg"><label>Vergi Oranı (%)</label><input type="number" id="m_tax" placeholder="15" step="0.01" inputmode="decimal"/><div class="hint">Varsayılan %15</div></div>
+    </div>
+    <div class="fg"><label>Vade (Gün)</label><input type="number" id="m_tenor" placeholder="32" min="1" step="1" inputmode="numeric"/></div>
+    <div class="fg"><label>Başlangıç Tarihi</label><input type="date" id="m_start"/></div>
+    <div class="sheet-actions">
+      <button class="btn-cancel" onclick="closeModal('modalMevduat')">İptal</button>
+      <button class="btn-ok" onclick="saveMevduat()">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- Döviz Modal -->
+<div class="overlay" id="modalDoviz">
+  <div class="sheet">
+    <div class="handle"></div>
+    <h2 id="dovizModalTitle">Döviz Ekle</h2>
+    <div class="fg"><label>Kişi</label><select id="d_person"></select></div>
+    <div class="fg"><label>Döviz Cinsi</label>
+      <select id="d_type" onchange="onDovizTypeChange()">
+        <option value="USD">🇺🇸 USD - Amerikan Doları</option>
+        <option value="EUR">🇪🇺 EUR - Euro</option>
+        <option value="GBP">🇬🇧 GBP - Sterlin</option>
+        <option value="CHF">🇨🇭 CHF - İsviçre Frangı</option>
+        <option value="Diğer">Diğer</option>
+      </select>
+    </div>
+    <div class="fg" id="d_custom_wrap" style="display:none"><label>Döviz Adı</label><input type="text" id="d_custom" placeholder="örn. JPY"/></div>
+    <button class="btn-fetch" id="d_fetch_btn" onclick="fetchDovizKur()">🔄 Güncel Kuru Çek</button>
+    <div class="kur-info" id="d_kur_info"></div>
+    <div class="fg"><label>Miktar</label><input type="number" id="d_amount" placeholder="1000" step="0.01" inputmode="decimal"/></div>
+    <div class="frow">
+      <div class="fg"><label>Alış Kuru (₺)</label><input type="number" id="d_alis" placeholder="32.50" step="0.0001" inputmode="decimal"/></div>
+      <div class="fg"><label>Satış Kuru (₺)</label><input type="number" id="d_satis" placeholder="32.80" step="0.0001" inputmode="decimal"/></div>
+    </div>
+    <div class="fg"><label>Alış Maliyeti (₺, birim başına) — isteğe bağlı</label><input type="number" id="d_maliyet" placeholder="30.00" step="0.0001" inputmode="decimal"/></div>
+    <div class="sheet-actions">
+      <button class="btn-cancel" onclick="closeModal('modalDoviz')">İptal</button>
+      <button class="btn-ok" onclick="saveDoviz()">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- Altın Modal -->
+<div class="overlay" id="modalAltin">
+  <div class="sheet">
+    <div class="handle"></div>
+    <h2 id="altinModalTitle">Altın Ekle</h2>
+    <div class="fg"><label>Kişi</label><select id="a_person"></select></div>
+    <div class="fg"><label>Altın Tipi</label>
+      <select id="a_type" onchange="onAltinTypeFill()">
+        <option value="Gram Altın">Gram Altın</option>
+        <option value="Çeyrek Altın">Çeyrek Altın</option>
+        <option value="Yarım Altın">Yarım Altın</option>
+        <option value="Tam Altın">Tam Altın</option>
+        <option value="Cumhuriyet Altını">Cumhuriyet Altını</option>
+        <option value="Ata Altın">Ata Altın</option>
+        <option value="Diğer">Diğer</option>
+      </select>
+    </div>
+    <button class="btn-fetch" id="a_fetch_btn" onclick="fetchAltinKur()">🔄 Güncel Kuru Çek</button>
+    <div class="kur-info" id="a_kur_info"></div>
+    <div class="fg"><label>Miktar (adet veya gram)</label><input type="number" id="a_amount" placeholder="10" step="0.001" inputmode="decimal"/></div>
+    <div class="frow">
+      <div class="fg"><label>Alış Kuru (₺)</label><input type="number" id="a_alis" placeholder="3200" step="0.01" inputmode="decimal"/></div>
+      <div class="fg"><label>Satış Kuru (₺)</label><input type="number" id="a_satis" placeholder="3250" step="0.01" inputmode="decimal"/></div>
+    </div>
+    <div class="fg"><label>Alış Maliyeti (₺, birim başına) — isteğe bağlı</label><input type="number" id="a_maliyet" placeholder="3000" step="0.01" inputmode="decimal"/></div>
+    <div class="sheet-actions">
+      <button class="btn-cancel" onclick="closeModal('modalAltin')">İptal</button>
+      <button class="btn-ok" onclick="saveAltin()">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- Kurları Elle Güncelle Modal -->
+<div class="overlay" id="modalKur">
+  <div class="sheet">
+    <div class="handle"></div>
+    <h2 id="kurModalTitle">Kurları Güncelle</h2>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:1rem;">Her cins için alış ve satış kurunu girin. Aynı cinsteki tüm kartlar birlikte güncellenir. Boş bıraktığınız cinsler değişmez.</p>
+    <div id="kurModalRows"></div>
+    <div class="sheet-actions">
+      <button class="btn-cancel" onclick="closeModal('modalKur')">İptal</button>
+      <button class="btn-ok" onclick="saveKurlar()">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- Backup/Restore Modal -->
+<div class="overlay" id="modalBackup">
+  <div class="sheet">
+    <div class="handle"></div>
+    <h2>Yedekle / Geri Yükle</h2>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:1rem;">Tüm verilerinizi JSON dosyası olarak dışa aktarın veya daha önce kaydettiğiniz bir yedekten geri yükleyin.</p>
+    <button class="btn-backup export" style="width:100%;margin-bottom:10px;padding:14px;" onclick="exportBackup()">⬇️ JSON Olarak İndir</button>
+    <button class="btn-backup export" style="width:100%;margin-bottom:10px;padding:14px;" onclick="shareBackup()">📤 Paylaş (WhatsApp, Drive, Mail…)</button>
+    <button class="btn-backup import" style="width:100%;margin-bottom:10px;padding:14px;" onclick="document.getElementById('importFile').click()">⬆️ JSON Dosyasından Yükle</button>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importBackup(event)"/>
+    <div class="fg" style="margin-bottom:10px;"><label>🔒 Yedek şifresi (isteğe bağlı)</label><input type="password" id="backupPass" placeholder="Boş bırakırsanız şifresiz yedeklenir" autocomplete="new-password"/>
+      <div style="font-size:11px;color:var(--text2);margin-top:4px;">Şifre girerseniz yedek dosyası şifrelenir. Şifreyi unutursanız yedek açılamaz.</div></div>
+    <div id="backupInfo" style="font-size:12px;text-align:center;color:var(--text3);margin-top:8px;"></div>
+    <div class="sheet-actions" style="margin-top:1rem;">
+      <button class="btn-cancel" style="flex:1" onclick="closeModal('modalBackup')">Kapat</button>
+    </div>
+  </div>
+</div>
+
+<!-- Mevduat Detail Modal -->
+<div class="overlay" id="modalMevduatDetail">
+  <div class="sheet">
+    <div class="handle"></div>
+    <h2 id="mevduatDetailTitle">Hesap Detayı</h2>
+    <div id="mevduatDetailContent"></div>
+    <div class="sheet-actions" style="margin-top:1rem">
+      <button class="btn-cancel" onclick="closeModal('modalMevduatDetail')">Kapat</button>
+      <button class="btn-ok" onclick="renewMevduat()">Yenile</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+const SK = 'finans_v1';
+let state = {
+  persons: [],      // [{id,name,emoji}]
+  nakit: [],        // [{id,personId,birikim,faizYillik,vergi,cuzdan}]
+  kredi: [],        // [{id,personId,name,borc,kesimTarih,odemeTarih}]
+  mevduat: [],      // [{id,personId,name,bank,principal,rate,tax,tenor,startDate,endDate}]
+  doviz: [],        // [{id,personId,type,amount,alis,satis}]
+  altin: [],        // [{id,personId,type,amount,alis,satis}]
+};
+let heroMode = 'anapara'; // 'anapara' | 'netpara'
+let currentPage = 'overview';
+let selectedPerson = 'all'; // 'all' or personId
+let editingId = null;
+let detailMevduatId = null;
+
+// ============================================================
+// STORAGE
+// ============================================================
+function load() {
+  try { const r = localStorage.getItem(SK); if(r) state = {...state,...JSON.parse(r)}; } catch(e){}
+  // clean expired kredi cards
+  const today = new Date(); today.setHours(0,0,0,0);
+  state.kredi = state.kredi.filter(k => {
+    const od = new Date(k.odemeTarih); od.setHours(0,0,0,0);
+    return od >= today;
+  });
+}
+function save() {
+  setSave('saving','Kaydediliyor...');
+  try { localStorage.setItem(SK, JSON.stringify(state)); setTimeout(()=>setSave('ok','Kaydedildi'),350); }
+  catch(e){ setSave('err','Hata!'); }
+}
+function setSave(s,t){
+  const el=document.getElementById('saveBadge'); el.className='save-badge '+s;
+  document.getElementById('saveText').textContent=t;
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+let privacyOn=false;
+try{ privacyOn=localStorage.getItem('finans_privacy')==='1'; }catch(e){}
+function fmtAmt(n,dec=2){ return privacyOn?'•••••':fmtNum(n,dec); }
+function togglePrivacy(){
+  privacyOn=!privacyOn;
+  try{ localStorage.setItem('finans_privacy',privacyOn?'1':'0'); }catch(e){}
+  updatePrivacyBtn(); renderAll();
+}
+function updatePrivacyBtn(){ const b=document.getElementById('privBtn'); if(b) b.textContent=privacyOn?'🙈':'👁'; }
+function fmt(n,dec=2){ if(privacyOn) return '₺•••••'; return '₺'+Number(n).toLocaleString('tr-TR',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
+function fmtNum(n,dec=2){ return Number(n).toLocaleString('tr-TR',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
+function today(){ return new Date().toISOString().split('T')[0]; }
+function daysLeft(d){ return Math.ceil((new Date(d)-new Date())/86400000); }
+function midRate(alis,satis){ return (parseFloat(alis)+parseFloat(satis))/2; }
+
+function personName(id){
+  if(id==='all') return 'Tümü';
+  const p=state.persons.find(x=>x.id===id);
+  return p ? (p.emoji?p.emoji+' ':'')+p.name : '?';
+}
+
+function calcMevduat(m){
+  const start=new Date(m.startDate), today2=new Date();
+  const elapsed=Math.min(Math.max(0,(today2-start)/86400000),m.tenor);
+  const r=m.rate/100, tax=(m.tax??15)/100;
+  const grossEl=m.principal*r*(elapsed/365);
+  const netEl=grossEl*(1-tax);
+  const grossTot=m.principal*r*(m.tenor/365);
+  const netTot=grossTot*(1-tax);
+  const dailyNet=m.principal*r/365*(1-tax);
+  const progress=m.tenor>0?elapsed/m.tenor:0;
+  return {grossEl,netEl,grossTot,netTot,dailyNet,elapsed,progress};
+}
+
+function filteredPersons(){ return selectedPerson==='all'?state.persons:state.persons.filter(p=>p.id===selectedPerson); }
+
+function filterByPerson(arr){ return selectedPerson==='all'?arr:arr.filter(x=>x.personId===selectedPerson); }
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+const PAGE_ORDER = ['overview','kontrol','nakit','kredi','mevduat','doviz','altin'];
+
+function goPage(page, dir){
+  const oldIdx = PAGE_ORDER.indexOf(currentPage);
+  const newIdx = PAGE_ORDER.indexOf(page);
+  // Yön belirlenmemişse index farkından hesapla
+  const direction = dir !== undefined ? dir : (newIdx >= oldIdx ? 'right' : 'left');
+  const animIn = direction === 'right' ? 'slide-in-right' : 'slide-in-left';
+
+  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active','slide-in-right','slide-in-left'));
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+
+  currentPage=page;
+  const pageEl = document.getElementById('page'+cap(page));
+  pageEl.classList.add('active', animIn);
+  setTimeout(()=>pageEl.classList.remove(animIn), 250);
+
+  document.getElementById('nav-'+page).classList.add('active');
+  const titles={overview:'Genel Bakış',kontrol:'Kontrol',nakit:'Nakit',kredi:'Kredi Kartı',mevduat:'Mevduat',doviz:'Döviz',altin:'Altın'};
+  document.getElementById('pageTitle').textContent=titles[page];
+  document.getElementById('personRow').style.display=(page==='overview')?'flex':'none';
+  renderAll();
+}
+function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+
+// ============================================================
+// PERSON ROW
+// ============================================================
+function renderPersonRow(){
+  const row=document.getElementById('personRow');
+  let html=`<div class="person-chip all ${selectedPerson==='all'?'active':''}" onclick="selectPerson('all')">👥 Tümü</div>`;
+  state.persons.forEach(p=>{
+    html+=`<div class="person-chip ${selectedPerson===p.id?'active':''}" onclick="selectPerson('${p.id}')">${p.emoji||'👤'} ${p.name}</div>`;
+  });
+  html+=`<button class="add-person-btn" onclick="openPersonModal()">+ Kişi</button>`;
+  row.innerHTML=html;
+}
+function selectPerson(id){ selectedPerson=id; renderAll(); }
+
+// ============================================================
+// OVERVIEW PAGE
+// ============================================================
+function toggleHero(){
+  heroMode = heroMode==='anapara' ? 'netpara' : 'anapara';
+  renderOverview();
+}
+
+function renderOverview(){
+  const page=document.getElementById('pageOverview');
+  const mList=filterByPerson(state.mevduat);
+  const nList=filterByPerson(state.nakit);
+  const kList=filterByPerson(state.kredi);
+  const dList=filterByPerson(state.doviz);
+  const aList=filterByPerson(state.altin);
+
+  // MEVDUAT calcs
+  let mevAnapara=0, mevNetElapsed=0, mevNetTotal=0, mevDailyNet=0, toplamVergi=0;
+  mList.forEach(m=>{
+    const c=calcMevduat(m);
+    mevAnapara+=m.principal; mevNetElapsed+=c.netEl; mevNetTotal+=c.netTot;
+    if(mevduatStatus(m)!=='expired') mevDailyNet+=c.dailyNet;
+    toplamVergi += c.grossEl - c.netEl; // ödenen vergi (şimdiye kadar)
+  });
+
+  // NAKIT calcs
+  let totalBirikim=0, totalCuzdan=0, nakitDailyNet=0;
+  nList.forEach(n=>{
+    totalBirikim+=n.birikim||0; totalCuzdan+=n.cuzdan||0;
+    const r=(n.faizYillik||0)/100; const tax=(n.vergi??15)/100;
+    nakitDailyNet+=(n.birikim||0)*r/365*(1-tax);
+  });
+  const totalNakit=totalBirikim+totalCuzdan;
+
+  // KREDI calcs
+  let totalBorc=0;
+  kList.forEach(k=>{ totalBorc+=k.borc||0; });
+
+  // DOVIZ
+  let dovizTL=0;
+  dList.forEach(d=>{ dovizTL+=d.amount*midRate(d.alis,d.satis); });
+
+  // ALTIN
+  let altinTL=0;
+  aList.forEach(a=>{ altinTL+=a.amount*midRate(a.alis,a.satis); });
+
+  // SUMMARY CALCS
+  const netPara=totalNakit-totalBorc;
+  const toplamAnapara=mevAnapara+netPara+dovizTL+altinTL;
+  const vadeSonuAnapara=mevAnapara+mevNetTotal;
+  const mevduatKazancFarki=vadeSonuAnapara-mevAnapara;
+  const toplamGunlukNet=mevDailyNet+nakitDailyNet;
+
+  const isNetPara = heroMode==='netpara';
+  const heroVal = isNetPara ? netPara : toplamAnapara;
+  const heroLabel = isNetPara ? 'Net Para (Nakit - Borç)' : 'Toplam Anapara';
+  const heroSub = isNetPara
+    ? `Nakit ${fmt(totalNakit)} — Borç ${fmt(totalBorc)}`
+    : 'Mevduat + Net Nakit + Döviz + Altın';
+
+  page.innerHTML=backupBannerHtml()+`
+    <div class="summary-hero">
+      <div class="hero-label">${heroLabel}</div>
+      <div class="hero-val" style="color:${isNetPara&&heroVal<0?'#ffaaaa':'#fff'}">${fmt(heroVal)}</div>
+      <div class="hero-sub">${heroSub}</div>
+      <div class="hero-switch">
+        <span class="hero-switch-lbl">${isNetPara?'Toplam Anapara':'Net Para'}</span>
+        <label class="switch-wrap">
+          <input type="checkbox" ${isNetPara?'checked':''} onchange="toggleHero()"/>
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="mini-card">
+        <div class="lbl">Günlük Net Kazanç</div>
+        <div class="val green">${fmt(toplamGunlukNet)}</div>
+        <div class="sub">Mevduat + Birikim</div>
+      </div>
+      <div class="mini-card">
+        <div class="lbl">Toplam Mevduat Kazanç</div>
+        <div class="val green">${fmt(mevNetElapsed)}</div>
+        <div class="sub">Şimdiki net kazanç</div>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="mini-card">
+        <div class="lbl">Mevduat Anapara</div>
+        <div class="val">${fmt(mevAnapara)}</div>
+        <div class="sub">Şimdiki anapara</div>
+      </div>
+      <div class="mini-card">
+        <div class="lbl">Vade Sonu Mevduat</div>
+        <div class="val" style="color:var(--yellow)">${fmt(vadeSonuAnapara)}</div>
+        <div class="sub">+${fmt(mevduatKazancFarki)} kazanç</div>
+      </div>
+    </div>
+    <div class="grid3">
+      <div class="mini-card">
+        <div class="lbl">Nakit</div>
+        <div class="val">${fmt(totalNakit)}</div>
+        <div class="sub">Birikim+Cüzdan</div>
+      </div>
+      <div class="mini-card">
+        <div class="lbl">Borç</div>
+        <div class="val red">${fmt(totalBorc)}</div>
+        <div class="sub">Kredi kartı</div>
+      </div>
+      <div class="mini-card">
+        <div class="lbl">Net Para</div>
+        <div class="val ${netPara>=0?'green':'red'}">${fmt(netPara)}</div>
+        <div class="sub">Nakit - Borç</div>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="mini-card">
+        <div class="lbl">Döviz (TL)</div>
+        <div class="val" style="color:var(--blue-light)">${fmt(dovizTL)}</div>
+        <div class="sub">Orta kur</div>
+      </div>
+      <div class="mini-card">
+        <div class="lbl">Altın (TL)</div>
+        <div class="val gold">${fmt(altinTL)}</div>
+        <div class="sub">Orta kur</div>
+      </div>
+    </div>
+    <div class="mini-card" style="margin-bottom:10px;">
+      <div class="lbl">Ödenen Toplam Vergi (Mevduat)</div>
+      <div class="val amber">${fmt(toplamVergi)}</div>
+      <div class="sub">Şimdiye kadar kesilen stopaj</div>
+    </div>
+    <div class="upcoming-card">
+      <div class="section-title" style="margin:0 0 8px;">📅 Yaklaşan İşlemler (7 Gün)</div>
+      ${renderUpcoming(mList, kList)}
+    </div>
+    ${selectedPerson==='all' ? renderPersonSummaries(mList,nList,kList,dList,aList) : ''}
+  `;
+}
+
+function renderUpcoming(mList, kList) {
+  const items = [];
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  // MEVDUAT - vade tarihi 7 gün içinde olanlar
+  mList.forEach(m => {
+    const dl = daysLeft(m.endDate);
+    if (dl >= 0 && dl <= 7) {
+      const c = calcMevduat(m);
+      items.push({
+        type: 'mevduat',
+        icon: '🏦',
+        iconCls: 'mev',
+        name: m.name,
+        sub: `${personName(m.personId)} · ${m.bank}`,
+        tarih: m.endDate,
+        dl,
+        amount: fmt(c.netTot),
+        amountLabel: 'Net kazanç',
+        extra: `Anapara: ${fmt(m.principal)}`
+      });
+    }
+  });
+
+  // KREDİ KARTI - son ödeme tarihi 7 gün içinde olanlar
+  kList.forEach(k => {
+    const dlOdeme = daysLeft(k.odemeTarih);
+    const dlKesim = daysLeft(k.kesimTarih);
+    if (dlOdeme >= 0 && dlOdeme <= 7) {
+      items.push({
+        type: 'kredi-odeme',
+        icon: '💳',
+        iconCls: 'krd',
+        name: k.name + ' — Son Ödeme',
+        sub: `${personName(k.personId)}`,
+        tarih: k.odemeTarih,
+        dl: dlOdeme,
+        amount: fmt(k.borc),
+        amountLabel: 'Borç',
+        extra: ''
+      });
+    }
+    // Hesap kesim tarihi 7 gün içinde olanlar
+    if (dlKesim >= 0 && dlKesim <= 7) {
+      items.push({
+        type: 'kredi-kesim',
+        icon: '📋',
+        iconCls: 'krd-kesim',
+        name: k.name + ' — Hesap Kesim',
+        sub: `${personName(k.personId)}`,
+        tarih: k.kesimTarih,
+        dl: dlKesim,
+        amount: fmt(k.borc),
+        amountLabel: 'Mevcut borç',
+        extra: ''
+      });
+    }
+  });
+
+  // Tarihe göre sırala (en yakın önce)
+  items.sort((a, b) => a.dl - b.dl);
+
+  if (!items.length) {
+    return `<div class="upcoming-empty">🎉 Önümüzdeki 7 günde bekleyen işlem yok</div>`;
+  }
+
+  return items.map(it => {
+    const daysCls = it.dl === 0 ? 'd0' : it.dl <= 1 ? 'd1' : it.dl <= 3 ? 'd3' : 'd7';
+    const daysText = it.dl === 0 ? 'BUGÜN!' : it.dl === 1 ? 'Yarın' : `${it.dl} gün`;
+    const tarihFmt = new Date(it.tarih).toLocaleDateString('tr-TR', {day:'2-digit', month:'short'});
+    return `<div class="upcoming-item">
+      <div class="upcoming-icon ${it.iconCls}">${it.icon}</div>
+      <div class="upcoming-body">
+        <div class="upcoming-name">${it.name}</div>
+        <div class="upcoming-sub">${it.sub} · ${tarihFmt}</div>
+        ${it.extra ? `<div class="upcoming-sub">${it.extra}</div>` : ''}
+      </div>
+      <div class="upcoming-right">
+        <div class="upcoming-days ${daysCls}">${daysText}</div>
+        <div class="upcoming-amount">${it.amountLabel}: ${it.amount}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderPersonSummaries(mList,nList,kList,dList,aList){
+  if(!state.persons.length) return '';
+  let html='<div class="section-title">Kişi Bazlı Özet</div>';
+  state.persons.forEach(p=>{
+    const pm=mList.filter(x=>x.personId===p.id);
+    const pn=nList.filter(x=>x.personId===p.id);
+    const pk=kList.filter(x=>x.personId===p.id);
+    const pd=dList.filter(x=>x.personId===p.id);
+    const pa=aList.filter(x=>x.personId===p.id);
+    let mevAna=0,mevNet=0; pm.forEach(m=>{ const c=calcMevduat(m); mevAna+=m.principal; mevNet+=c.netEl; });
+    let birikim=0,cuzdan=0; pn.forEach(n=>{ birikim+=n.birikim||0; cuzdan+=n.cuzdan||0; });
+    let borc=0; pk.forEach(k=>{ borc+=k.borc||0; });
+    let dov=0; pd.forEach(d=>{ dov+=d.amount*midRate(d.alis,d.satis); });
+    let alt=0; pa.forEach(a=>{ alt+=a.amount*midRate(a.alis,a.satis); });
+    const net=(birikim+cuzdan)-borc;
+    const toplam=mevAna+net+dov+alt;
+    html+=`<div class="acc-card border-green" onclick="selectPerson('${p.id}');goPage('overview')">
+      <div class="acc-head">
+        <div><div class="acc-title">${p.emoji||'👤'} ${p.name}</div><div class="acc-sub">Toplam Varlık: ${fmt(toplam)}</div></div>
+        <button class="icon-btn" onclick="event.stopPropagation();deletePerson('${p.id}')">🗑</button>
+      </div>
+      <div class="acc-row"><span class="key">Mevduat Anapara</span><span class="v">${fmt(mevAna)}</span></div>
+      <div class="acc-row"><span class="key">Mevduat Net Kazanç</span><span class="v green">${fmt(mevNet)}</span></div>
+      <div class="acc-row"><span class="key">Net Para</span><span class="v ${net>=0?'green':'red'}">${fmt(net)}</span></div>
+      <div class="acc-row"><span class="key">Döviz + Altın</span><span class="v blue">${fmt(dov+alt)}</span></div>
+    </div>`;
+  });
+  return html;
+}
+
+// ============================================================
+// NAKİT PAGE
+// ============================================================
+function renderNakit(){
+  const page=document.getElementById('pageNakit');
+  const list=filterByPerson(state.nakit);
+  let totalBirikim=0, totalCuzdan=0, totalDaily=0;
+  list.forEach(n=>{
+    totalBirikim+=n.birikim||0; totalCuzdan+=n.cuzdan||0;
+    const r=(n.faizYillik||0)/100; const tax=(n.vergi??15)/100;
+    totalDaily+=(n.birikim||0)*r/365*(1-tax);
+  });
+  let html=`<button class="add-card-btn" onclick="openNakitModal()">+ Nakit Hesabı Ekle</button>`;
+  if(!list.length){
+    html+=`<div class="empty-state"><div class="ei">💵</div><p>Henüz nakit hesabı yok.<br>Eklemek için butona tıklayın.</p></div>`;
+  } else {
+    html+=`<div class="grid3" style="margin-bottom:10px;">
+      <div class="mini-card"><div class="lbl">Toplam Birikim</div><div class="val">${fmt(totalBirikim)}</div></div>
+      <div class="mini-card"><div class="lbl">Toplam Cüzdan</div><div class="val">${fmt(totalCuzdan)}</div></div>
+      <div class="mini-card"><div class="lbl">Günlük Faiz</div><div class="val green">${fmt(totalDaily)}</div></div>
+    </div>`;
+    list.forEach(n=>{
+      const r=(n.faizYillik||0)/100; const tax=(n.vergi??15)/100;
+      const daily=(n.birikim||0)*r/365*(1-tax);
+      const toplam=(n.birikim||0)+(n.cuzdan||0);
+      html+=`<div class="asset-card" id="ncard_${n.id}">
+        <div class="asset-summary b-green" onclick="toggleAssetCard('ncard_${n.id}')">
+          <div class="asset-sum-icon">💵</div>
+          <div class="asset-sum-left">
+            <div class="asset-sum-name">${personName(n.personId)}</div>
+            <div class="asset-sum-meta">Günlük net faiz: ${fmt(daily)}</div>
+          </div>
+          <div class="asset-sum-right">
+            <div class="asset-sum-tl" style="color:var(--green);">${fmt(toplam)}</div>
+            <div class="asset-sum-miktar">Birikim: ${fmt(n.birikim||0)}</div>
+          </div>
+          <div class="asset-chevron">▼</div>
+        </div>
+        <div class="asset-detail">
+          <div class="acc-row"><span class="key">Birikim Hesabı</span><span class="v">${fmt(n.birikim||0)}</span></div>
+          <div class="acc-row"><span class="key">Yıllık Faiz Oranı</span><span class="v">%${fmtNum(n.faizYillik||0,2)}</span></div>
+          <div class="acc-row"><span class="key">Vergi Oranı</span><span class="v">%${fmtNum(n.vergi??15,2)}</span></div>
+          <div class="acc-row"><span class="key">Günlük Net Faiz</span><span class="v green">${fmt(daily)}</span></div>
+          <div class="acc-row"><span class="key">Cüzdan</span><span class="v">${fmt(n.cuzdan||0)}</span></div>
+          <div class="acc-row"><span class="key">Toplam Nakit</span><span class="v" style="color:var(--green);font-size:16px;font-weight:700;">${fmt(toplam)}</span></div>
+          <div class="acc-row" style="border-bottom:none;padding-top:10px;">
+            <div style="display:flex;gap:8px;width:100%;">
+              <button class="icon-btn" style="flex:1;justify-content:center;font-size:13px;font-weight:600;background:var(--bg);border-radius:10px;height:36px;" onclick="openNakitEdit('${n.id}')">✏️ Düzenle</button>
+              <button class="icon-btn danger" style="flex:1;justify-content:center;font-size:13px;font-weight:600;background:var(--red-bg);border-radius:10px;height:36px;color:var(--red);" onclick="deleteItem('nakit','${n.id}')">🗑 Sil</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    });
+  }
+  page.innerHTML=html;
+}
+
+// ============================================================
+// KREDİ PAGE
+// ============================================================
+function mevduatStatus(m){ const d=daysLeft(m.endDate); if(d<0) return 'expired'; if(d<=5) return 'urgent'; if(d<=7) return 'soon'; return 'active'; }
+
+function renderKredi(){
+  const page=document.getElementById('pageKredi');
+  const list=[...filterByPerson(state.kredi)].sort((a,b)=>daysLeft(a.odemeTarih)-daysLeft(b.odemeTarih));
+  let totalBorc=0; list.forEach(k=>totalBorc+=k.borc||0);
+  const gunlukBorc=totalBorc/30;
+  let html=`<button class="add-card-btn" onclick="openKrediModal()">+ Kredi Kartı Ekle</button>`;
+  if(list.length){
+    // Kesim tarihi geçmiş kartların borç toplamı
+    let kesimGecenBorc = 0;
+    list.forEach(k=>{ if(daysLeft(k.kesimTarih)<0) kesimGecenBorc+=k.borc||0; });
+    html+=`<div class="grid3" style="margin-bottom:10px;">
+      <div class="mini-card"><div class="lbl">Toplam Borç</div><div class="val" style="color:var(--red);">${fmt(totalBorc)}</div></div>
+      <div class="mini-card"><div class="lbl">Kesilen Borç</div><div class="val" style="color:var(--yellow);">${fmt(kesimGecenBorc)}</div><div class="sub">Ödeme bekliyor</div></div>
+      <div class="mini-card"><div class="lbl">Günlük Borç</div><div class="val amber">${fmt(gunlukBorc)}</div><div class="sub">Aylık ort.</div></div>
+    </div>`;
+    list.forEach(k=>{
+      const dlOdeme=daysLeft(k.odemeTarih);
+      const dlKesim=daysLeft(k.kesimTarih);
+      const kesimGecti = dlKesim < 0;
+      const cardBorder = kesimGecti ? 'border-green-bg' : 'border-red';
+      const tagTxt=dlOdeme<=0?'Bugün son gün!':dlOdeme+' gün kaldı';
+      const odemeRenk = dlOdeme<=1?'var(--red-light)':dlOdeme<=3?'var(--yellow)':'var(--green)';
+      const odemeFontSize = dlOdeme<=1?'15px':'13px';
+      const kesimBadge = kesimGecti
+        ? `<span class="tag g" style="font-size:12px;">✓ Kesim geçti</span>`
+        : `<span class="tag g" style="font-size:12px;">Kesim: ${dlKesim} gün</span>`;
+      const gunlukBorc = (k.borc||0) / 30;
+      html+=`<div class="kredi-card" id="kcard_${k.id}">
+        <div class="kredi-summary ${cardBorder}" onclick="toggleKrediCard('${k.id}')">
+          <div class="kredi-sum-left">
+            <div class="kredi-sum-name">💳 ${k.name} ${kesimBadge}</div>
+            <div class="kredi-sum-meta">${personName(k.personId)} · Son ödeme: ${new Date(k.odemeTarih).toLocaleDateString('tr-TR',{day:'2-digit',month:'short'})}</div>
+          </div>
+          <div class="kredi-sum-right">
+            <div class="kredi-sum-borc">${fmt(k.borc||0)}</div>
+            <div class="kredi-sum-odeme" style="color:${odemeRenk};font-size:${odemeFontSize};">${tagTxt}</div>
+          </div>
+          <div class="kredi-chevron">▼</div>
+        </div>
+        <div class="kredi-detail">
+          <div class="acc-row"><span class="key">Kart Borcu</span><span class="v" style="color:var(--red-light);font-size:17px;">${fmt(k.borc||0)}</span></div>
+          <div class="acc-row"><span class="key">Günlük Borç (ort.)</span><span class="v amber">${fmt(gunlukBorc)}</span></div>
+          <div class="acc-row"><span class="key">Hesap Kesim Tarihi</span><span class="v ${kesimGecti?'green':''}">${new Date(k.kesimTarih).toLocaleDateString('tr-TR')}</span></div>
+          <div class="acc-row"><span class="key">Son Ödeme Tarihi</span><span class="v">${new Date(k.odemeTarih).toLocaleDateString('tr-TR')}</span></div>
+          <div class="acc-row"><span class="key">Ödemeye Kalan</span><span class="v" style="font-size:${dlOdeme<=1?'16':'14'}px;font-weight:700;color:${odemeRenk};">${tagTxt}</span></div>
+          ${k.dongu?`<div class="acc-row"><span class="key">Döngü</span><span class="v">🔁 Her ay yenilenir</span></div>`:''}
+          ${(k.dongu&&k.taksit)?`<div class="acc-row"><span class="key">Taksit</span><span class="v">${fmt(k.taksit)} × ${k.kalan!=null?k.kalan+' ay kaldı':'devam'}</span></div>`:''}
+          <div class="acc-row" style="border-bottom:none;padding-top:10px;"><button class="icon-btn" style="width:100%;justify-content:center;font-size:14px;font-weight:700;background:var(--green-bg);border-radius:10px;height:40px;color:var(--green);" onclick="markOdendi('${k.id}')">✅ Ödendi${k.dongu?' (sonraki aya geç)':''}</button></div>
+          <div class="acc-row" style="border-bottom:none;padding-top:10px;">
+            <div style="display:flex;gap:8px;width:100%;">
+              <button class="icon-btn" style="flex:1;justify-content:center;gap:5px;font-size:13px;font-weight:600;background:var(--bg);border-radius:10px;height:36px;" onclick="openKrediEdit('${k.id}')">✏️ Düzenle</button>
+              <button class="icon-btn danger" style="flex:1;justify-content:center;gap:5px;font-size:13px;font-weight:600;background:var(--red-bg);border-radius:10px;height:36px;color:var(--red);" onclick="deleteItem('kredi','${k.id}')">🗑 Sil</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    });
+  } else {
+    html+=`<div class="empty-state"><div class="ei">💳</div><p>Kredi kartı borcu yok.<br>Eklemek için butona tıklayın.</p></div>`;
+  }
+  page.innerHTML=html;
+}
+
+function toggleKrediCard(id) {
+  const card = document.getElementById('kcard_' + id);
+  if (!card) return;
+  card.classList.toggle('open');
+}
+
+// ============================================================
+// MEVDUAT PAGE
+// ============================================================
+function renderMevduat(){
+  const page=document.getElementById('pageMevduat');
+  const list=[...filterByPerson(state.mevduat)].sort((a,b)=>daysLeft(a.endDate)-daysLeft(b.endDate));
+  // Özet hesapla
+  let toplamAnapara=0, toplamVadeSonu=0, toplamGunluk=0;
+  list.forEach(m=>{
+    const c=calcMevduat(m);
+    toplamAnapara+=m.principal;
+    toplamVadeSonu+=m.principal+c.netTot;
+    if(mevduatStatus(m)!=='expired') toplamGunluk+=c.dailyNet;
+  });
+  let html=`<button class="add-card-btn" onclick="openMevduatModal()">+ Mevduat Ekle</button>`;
+  if(!list.length){
+    html+=`<div class="empty-state"><div class="ei">🏦</div><p>Mevduat hesabı yok.<br>Eklemek için butona tıklayın.</p></div>`;
+  } else {
+    html+=`<div class="grid3" style="margin-bottom:10px;">
+      <div class="mini-card"><div class="lbl">Toplam Anapara</div><div class="val">${fmt(toplamAnapara)}</div></div>
+      <div class="mini-card"><div class="lbl">Vade Sonu Toplam</div><div class="val" style="color:var(--yellow);">${fmt(toplamVadeSonu)}</div></div>
+      <div class="mini-card"><div class="lbl">Günlük Net</div><div class="val green">${fmt(toplamGunluk)}</div></div>
+    </div>`;
+    list.forEach(m=>{
+      const c=calcMevduat(m);
+      const s=mevduatStatus(m);
+      const dl=daysLeft(m.endDate);
+      const tagTxt=s==='expired'?`${Math.abs(dl)} gün önce geçti`:dl+' gün kaldı';
+      const borderSum=s==='expired'?'b-red':s==='urgent'?'b-red-bg':s==='soon'?'b-amber':'b-green';
+      const kalanRenk=s==='urgent'||s==='expired'?'var(--red-light)':s==='soon'?'var(--amber)':'var(--green)';
+      const vadeSonuAnapara=m.principal+c.netTot;
+      const vadeTarih=new Date(m.endDate).toLocaleDateString('tr-TR',{day:'2-digit',month:'short',year:'numeric'});
+      html+=`<div class="mev-card" id="mcard_${m.id}">
+        <div class="mev-summary ${borderSum}" onclick="toggleMevCard('${m.id}')">
+          <div class="mev-sum-left">
+            <div class="mev-sum-name">🏦 ${m.name}</div>
+            <div class="mev-sum-meta">${m.bank} · ${personName(m.personId)} · %${m.rate}</div>
+          </div>
+          <div class="mev-sum-right">
+            <div class="mev-sum-anapara">${fmt(vadeSonuAnapara)}</div>
+            <div class="mev-sum-vade" style="color:var(--text2);">${vadeTarih}</div>
+            <div class="mev-sum-kalan" style="color:${kalanRenk};">${tagTxt}</div>
+          </div>
+          <div class="mev-chevron">▼</div>
+        </div>
+        <div class="mev-detail">
+          <div class="mev-progress"><div class="mev-progress-fill" style="width:${Math.min(100,Math.round(c.progress*100))}%"></div></div>
+          <div class="acc-row"><span class="key">Anapara</span><span class="v">${fmt(m.principal)}</span></div>
+          <div class="acc-row"><span class="key">Faiz / Vergi / Vade</span><span class="v">%${m.rate} · %${m.tax??15} · ${m.tenor} gün</span></div>
+          <div class="acc-row"><span class="key">Net Kazanç (şimdiye)</span><span class="v green">${fmt(c.netEl)}</span></div>
+          <div class="acc-row"><span class="key">Günlük Net Kazanç</span><span class="v green">${fmt(c.dailyNet)}</span></div>
+          <div class="acc-row"><span class="key">Vade Sonu Net Kazanç</span><span class="v green">${fmt(c.netTot)}</span></div>
+          <div class="acc-row"><span class="key">Vade Sonu Anapara</span><span class="v" style="color:var(--yellow);font-size:16px;font-weight:700;">${fmt(vadeSonuAnapara)}</span></div>
+          <div class="acc-row"><span class="key">Başlangıç</span><span class="v">${new Date(m.startDate).toLocaleDateString('tr-TR')}</span></div>
+          <div class="acc-row"><span class="key">Vade Sonu</span><span class="v">${vadeTarih}</span></div>
+          <div class="acc-row" style="border-bottom:none;padding-top:10px;">
+            <div style="display:flex;gap:8px;width:100%;">
+              <button class="icon-btn" style="flex:1;justify-content:center;font-size:13px;font-weight:600;background:var(--bg);border-radius:10px;height:36px;" onclick="openMevduatEdit('${m.id}')">✏️ Düzenle</button>
+              <button class="icon-btn" style="flex:1;justify-content:center;font-size:13px;font-weight:600;background:var(--green-bg);border-radius:10px;height:36px;color:var(--green);" onclick="openMevduatDetailFromCard('${m.id}')">📊 Detay</button>
+              <button class="icon-btn danger" style="flex:1;justify-content:center;font-size:13px;font-weight:600;background:var(--red-bg);border-radius:10px;height:36px;color:var(--red);" onclick="deleteItem('mevduat','${m.id}')">🗑 Sil</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    });
+  }
+  page.innerHTML=html;
+}
+
+function toggleMevCard(id) {
+  const card = document.getElementById('mcard_' + id);
+  if (!card) return;
+  card.classList.toggle('open');
+}
+
+function openMevduatDetailFromCard(id) {
+  openMevduatDetail(id);
+}
+
+function openMevduatDetail(id){
+  detailMevduatId=id;
+  const m=state.mevduat.find(x=>x.id===id); if(!m) return;
+  const c=calcMevduat(m);
+  document.getElementById('mevduatDetailTitle').textContent=m.name;
+  document.getElementById('mevduatDetailContent').innerHTML=`
+    <div class="big-box g"><div class="bl">Vade Sonunda Net Kazanç</div><div class="bv">${fmt(c.netTot)}</div></div>
+    <div class="det-row"><span class="dl">Kişi</span><span class="dv">${personName(m.personId)}</span></div>
+    <div class="det-row"><span class="dl">Banka</span><span class="dv">${m.bank}</span></div>
+    <div class="det-row"><span class="dl">Anapara</span><span class="dv">${fmt(m.principal)}</span></div>
+    <div class="det-row"><span class="dl">Faiz Oranı</span><span class="dv">%${m.rate}</span></div>
+    <div class="det-row"><span class="dl">Vergi Oranı</span><span class="dv">%${m.tax??15}</span></div>
+    <div class="det-row"><span class="dl">Vade</span><span class="dv">${m.tenor} gün</span></div>
+    <div class="det-row"><span class="dl">Başlangıç</span><span class="dv">${new Date(m.startDate).toLocaleDateString('tr-TR')}</span></div>
+    <div class="det-row"><span class="dl">Vade Sonu</span><span class="dv">${new Date(m.endDate).toLocaleDateString('tr-TR')}</span></div>
+    <div class="det-row"><span class="dl">Brüt Kazanç (vade sonu)</span><span class="dv">${fmt(c.grossTot)}</span></div>
+    <div class="det-row"><span class="dl">Vergi Kesintisi</span><span class="dv">${fmt(c.grossTot-c.netTot)}</span></div>
+    <div class="det-row"><span class="dl">Şimdiye Net Kazanç</span><span class="dv g">${fmt(c.netEl)}</span></div>
+    <div class="det-row"><span class="dl">Günlük Net Kazanç</span><span class="dv g">${fmt(c.dailyNet)}</span></div>
+    <div class="det-row"><span class="dl">İlerleme</span><span class="dv">${c.elapsed.toFixed(1)} / ${m.tenor} gün</span></div>
+  `;
+  openModal('modalMevduatDetail');
+}
+
+function renewMevduat(){
+  const m=state.mevduat.find(x=>x.id===detailMevduatId); if(!m) return;
+  const c=calcMevduat(m);
+  const np=parseFloat((m.principal+c.netTot).toFixed(2));
+  const ns=m.endDate;
+  const ne=new Date(ns); ne.setDate(ne.getDate()+m.tenor);
+  if(confirm(`${fmt(np)} anaparayla yenilensin mi?`)){
+    const idx=state.mevduat.findIndex(x=>x.id===detailMevduatId);
+    state.mevduat[idx]={...m,principal:np,startDate:ns,endDate:ne.toISOString().split('T')[0]};
+    closeModal('modalMevduatDetail'); renderAll(); save();
+  }
+}
+
+// ============================================================
+// KÂR / ZARAR
+// ============================================================
+function plInfo(item){
+  if(!item.maliyet) return null;
+  const cost=item.amount*item.maliyet, val=item.amount*midRate(item.alis,item.satis);
+  return {cost,val,diff:val-cost,pct:cost?((val-cost)/cost*100):0};
+}
+function plText(pl){
+  if(privacyOn) return '•••••';
+  const sg=pl.diff>=0?'+':'−';
+  return `${sg}${fmtNum(Math.abs(pl.diff),2)} ₺ (${sg}%${fmtNum(Math.abs(pl.pct),2)})`;
+}
+function plColor(pl){ return pl.diff>=0?'var(--green)':'var(--red)'; }
+function plRow(item){
+  const pl=plInfo(item); if(!pl) return '';
+  return `<div class="acc-row"><span class="key">Alış Maliyeti</span><span class="v">${privacyOn?'•••••':fmtNum(item.maliyet,2)+' ₺'}</span></div>
+          <div class="acc-row"><span class="key">Kâr / Zarar</span><span class="v" style="color:${plColor(pl)};font-weight:700;">${plText(pl)}</span></div>`;
+}
+function plSummary(list){
+  let cost=0,val=0,n=0;
+  list.forEach(i=>{const pl=plInfo(i); if(pl){cost+=pl.cost;val+=pl.val;n++;}});
+  if(!n) return '';
+  const pl={diff:val-cost,pct:cost?((val-cost)/cost*100):0};
+  return `<div style="font-size:12px;font-weight:700;margin-top:4px;color:${plColor(pl)};">Kâr/Zarar: ${plText(pl)}</div>`;
+}
+
+// ============================================================
+// DÖVİZ PAGE
+// ============================================================
+function renderDoviz(){
+  const page=document.getElementById('pageDoviz');
+  const list=filterByPerson(state.doviz);
+  let totalTL=0; list.forEach(d=>totalTL+=d.amount*midRate(d.alis,d.satis));
+  const dLastUpdate = state.kurLastUpdate ? `<div class="kur-info ok">Son güncelleme: ${state.kurLastUpdate}</div>` : '';
+  let html=`<button class="add-card-btn" onclick="openDovizModal()">+ Döviz Ekle</button>`;
+  if(state.doviz.length) html+=kurButtonsHtml('doviz');
+  if(!list.length){
+    html+=`<div class="empty-state"><div class="ei">💱</div><p>Döviz kaydı yok.<br>Eklemek için butona tıklayın.</p></div>`;
+  } else {
+    // Döviz cinslerine göre grupla
+    const dovizGrp = {};
+    list.forEach(d=>{ dovizGrp[d.type]=(dovizGrp[d.type]||0)+d.amount; });
+    const dovizMiktarRows = Object.entries(dovizGrp).map(([t,a])=>
+      `<div style="font-size:13px;font-weight:700;color:var(--blue-light);">${fmtAmt(a,2)} ${t}</div>`
+    ).join('');
+    html+=`<div class="grid2" style="margin-bottom:10px;">
+      <div class="mini-card">
+        <div class="lbl">Toplam Döviz Miktarı</div>
+        ${dovizMiktarRows||'<div class="val">-</div>'}
+      </div>
+      <div class="mini-card">
+        <div class="lbl">Toplam Döviz (TL)</div>
+        <div class="val" style="color:var(--blue-light);">${fmt(totalTL)}</div>
+        ${plSummary(list)}
+        ${dLastUpdate}
+      </div>
+    </div>`;
+    list.forEach(d=>{
+      const mid=midRate(d.alis,d.satis);
+      const tl=d.amount*mid;
+      html+=`<div class="asset-card" id="dcard_${d.id}">
+        <div class="asset-summary b-blue" onclick="toggleAssetCard('dcard_${d.id}')">
+          <div class="asset-sum-icon">💱</div>
+          <div class="asset-sum-left">
+            <div class="asset-sum-name">${d.type}</div>
+            <div class="asset-sum-meta">${personName(d.personId)} · Orta kur: ${fmtNum(mid,4)}</div>
+          </div>
+          <div class="asset-sum-right">
+            <div class="asset-sum-tl" style="color:var(--blue-light);">${fmt(tl)}</div>
+            <div class="asset-sum-miktar">${fmtAmt(d.amount,2)} ${d.type}</div>
+          </div>
+          <div class="asset-chevron">▼</div>
+        </div>
+        <div class="asset-detail">
+          <div class="acc-row"><span class="key">Miktar</span><span class="v">${fmtAmt(d.amount,2)} ${d.type}</span></div>
+          <div class="acc-row"><span class="key">Alış Kuru</span><span class="v">${fmtNum(d.alis,4)} ₺</span></div>
+          <div class="acc-row"><span class="key">Satış Kuru</span><span class="v">${fmtNum(d.satis,4)} ₺</span></div>
+          <div class="acc-row"><span class="key">Orta Kur</span><span class="v">${fmtNum(mid,4)} ₺</span></div>
+          <div class="acc-row"><span class="key">TL Karşılığı</span><span class="v" style="color:var(--blue-light);font-size:16px;font-weight:700;">${fmt(tl)}</span></div>
+          ${plRow(d)}
+          <div class="acc-row" style="border-bottom:none;padding-top:10px;">
+            <div style="display:flex;gap:8px;width:100%;">
+              <button class="icon-btn" style="flex:1;justify-content:center;font-size:13px;font-weight:600;background:var(--bg);border-radius:10px;height:36px;" onclick="openDovizEdit('${d.id}')">✏️ Düzenle</button>
+              <button class="icon-btn danger" style="flex:1;justify-content:center;font-size:13px;font-weight:600;background:var(--red-bg);border-radius:10px;height:36px;color:var(--red);" onclick="deleteItem('doviz','${d.id}')">🗑 Sil</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    });
+  }
+  page.innerHTML=html;
+}
+
+// ============================================================
+// ALTIN PAGE
+// ============================================================
+function renderAltin(){
+  const page=document.getElementById('pageAltin');
+  const list=filterByPerson(state.altin);
+  let totalTL=0; list.forEach(a=>totalTL+=a.amount*midRate(a.alis,a.satis));
+  const aLastUpdate = state.kurLastUpdate ? `<div class="kur-info ok">Son güncelleme: ${state.kurLastUpdate}</div>` : '';
+  let html=`<button class="add-card-btn" onclick="openAltinModal()">+ Altın Ekle</button>`;
+  if(state.altin.length) html+=kurButtonsHtml('altin');
+  if(!list.length){
+    html+=`<div class="empty-state"><div class="ei">🥇</div><p>Altın kaydı yok.<br>Eklemek için butona tıklayın.</p></div>`;
+  } else {
+    // Altın tiplerine göre grupla
+    const altinGrp = {};
+    list.forEach(a=>{ altinGrp[a.type]=(altinGrp[a.type]||0)+a.amount; });
+    const altinMiktarRows = Object.entries(altinGrp).map(([t,a])=>
+      `<div style="font-size:13px;font-weight:700;color:var(--gold);">${fmtAmt(a,3)} ${t}</div>`
+    ).join('');
+    html+=`<div class="grid2" style="margin-bottom:10px;">
+      <div class="mini-card">
+        <div class="lbl">Toplam Altın Miktarı</div>
+        ${altinMiktarRows||'<div class="val">-</div>'}
+      </div>
+      <div class="mini-card">
+        <div class="lbl">Toplam Altın (TL)</div>
+        <div class="val gold">${fmt(totalTL)}</div>
+        ${plSummary(list)}
+        ${aLastUpdate}
+      </div>
+    </div>`;
+    list.forEach(a=>{
+      const mid=midRate(a.alis,a.satis);
+      const tl=a.amount*mid;
+      html+=`<div class="asset-card" id="acard_${a.id}">
+        <div class="asset-summary b-gold" onclick="toggleAssetCard('acard_${a.id}')">
+          <div class="asset-sum-icon">🥇</div>
+          <div class="asset-sum-left">
+            <div class="asset-sum-name">${a.type}</div>
+            <div class="asset-sum-meta">${personName(a.personId)} · Orta kur: ${fmtNum(mid,2)} ₺</div>
+          </div>
+          <div class="asset-sum-right">
+            <div class="asset-sum-tl" style="color:var(--gold);">${fmt(tl)}</div>
+            <div class="asset-sum-miktar">${fmtAmt(a.amount,3)} adet/gram</div>
+          </div>
+          <div class="asset-chevron">▼</div>
+        </div>
+        <div class="asset-detail">
+          <div class="acc-row"><span class="key">Miktar</span><span class="v">${fmtAmt(a.amount,3)}</span></div>
+          <div class="acc-row"><span class="key">Alış Kuru</span><span class="v">${fmtNum(a.alis,2)} ₺</span></div>
+          <div class="acc-row"><span class="key">Satış Kuru</span><span class="v">${fmtNum(a.satis,2)} ₺</span></div>
+          <div class="acc-row"><span class="key">Orta Kur</span><span class="v">${fmtNum(mid,2)} ₺</span></div>
+          <div class="acc-row"><span class="key">TL Karşılığı</span><span class="v" style="color:var(--gold);font-size:16px;font-weight:700;">${fmt(tl)}</span></div>
+          ${plRow(a)}
+          <div class="acc-row" style="border-bottom:none;padding-top:10px;">
+            <div style="display:flex;gap:8px;width:100%;">
+              <button class="icon-btn" style="flex:1;justify-content:center;font-size:13px;font-weight:600;background:var(--bg);border-radius:10px;height:36px;" onclick="openAltinEdit('${a.id}')">✏️ Düzenle</button>
+              <button class="icon-btn danger" style="flex:1;justify-content:center;font-size:13px;font-weight:600;background:var(--red-bg);border-radius:10px;height:36px;color:var(--red);" onclick="deleteItem('altin','${a.id}')">🗑 Sil</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    });
+  }
+  page.innerHTML=html;
+}
+
+// ============================================================
+// KUR ÇEK - API (Truncgil Finans: TL bazlı gerçek alış/satış)
+// ============================================================
+const KUR_API_URLS = [
+  'https://finans.truncgil.com/v4/today.json',
+  'https://finans.truncgil.com/v3/today.json',
+  'https://finans.truncgil.com/today.json'
+];
+const ALTIN_KODLARI = {
+  'Gram Altın':        'GRA',
+  'Çeyrek Altın':      'CEYREKALTIN',
+  'Yarım Altın':       'YARIMALTIN',
+  'Tam Altın':         'TAMALTIN',
+  'Cumhuriyet Altını': 'CUMHURIYETALTINI',
+  'Ata Altın':         'ATAALTIN'
+};
+let cachedRates = null;   // {doviz:{USD:{alis,satis}}, altin:{GRA:{alis,satis}}, updateDate}
+let kurRefreshing = false;
+
+function kurNum(v) {
+  const n = typeof v === 'number' ? v : parseFloat(String(v).replace(',', '.'));
+  return (isFinite(n) && n > 0) ? n : null;
+}
+
+function fmtRate(v) { return String(+Number(v).toFixed(6)); }
+
+async function fetchWithTimeout(url, ms) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms);
+  try { return await fetch(url, { signal: ctrl.signal, cache: 'no-store' }); }
+  finally { clearTimeout(t); }
+}
+
+async function fetchRatesFromAPI() {
+  let data = null, lastErr = null;
+  for (const url of KUR_API_URLS) {
+    try {
+      const r = await fetchWithTimeout(url, 6000);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const d = await r.json();
+      if (d && d.USD) { data = d; break; }
+      throw new Error('Beklenen veri yok');
+    } catch (e) { lastErr = e; }
+  }
+  if (!data) {
+    throw new Error('Kur servisine ulaşılamadı (' + (lastErr && lastErr.message ? lastErr.message : 'bilinmeyen hata') + ')');
+  }
+  const rates = { doviz: {}, altin: {}, updateDate: data.Update_Date || null };
+  for (const [code, v] of Object.entries(data)) {
+    if (!v || typeof v !== 'object') continue;
+    const alis = kurNum(v.Buying), satis = kurNum(v.Selling);
+    if (!alis || !satis) continue;
+    if (v.Type === 'Currency') rates.doviz[code] = { alis, satis };
+    else if (v.Type === 'Gold') rates.altin[code] = { alis, satis };
+  }
+  if (!rates.doviz.USD) throw new Error('Döviz verisi okunamadı');
+  return rates;
+}
+
+function formatKurDate(s) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/.exec(s || '');
+  if (m) return m[3] + '.' + m[2] + '.' + m[1] + ' ' + m[4] + ':' + m[5];
+  return new Date().toLocaleString('tr-TR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+
+// Kayıtlı TÜM döviz ve altın kartlarına gerçek alış/satışı uygular
+function applyRatesToState(rates) {
+  let d = 0, a = 0;
+  state.doviz.forEach((x, i) => {
+    const r = rates.doviz[x.type];
+    if (r) { state.doviz[i] = { ...x, alis: r.alis, satis: r.satis }; d++; }
+  });
+  state.altin.forEach((x, i) => {
+    const code = ALTIN_KODLARI[x.type];
+    const r = code && rates.altin[code];
+    if (r) { state.altin[i] = { ...x, alis: r.alis, satis: r.satis }; a++; }
+  });
+  if (d + a > 0) state.kurLastUpdate = formatKurDate(rates.updateDate);
+  return { d, a };
+}
+
+function showToast(msg, isErr) {
+  const old = document.getElementById('toastMsg');
+  if (old) old.remove();
+  const el = document.createElement('div');
+  el.id = 'toastMsg';
+  el.className = 'toast' + (isErr ? ' err' : '');
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => { if (el.parentNode) el.remove(); }, isErr ? 5000 : 2500);
+}
+
+function setAutoBtns(loading) {
+  document.querySelectorAll('[id^="kurAutoBtn_"]').forEach(b => {
+    b.classList.toggle('loading', loading);
+    b.textContent = loading ? '⏳ Güncelleniyor...' : '🔄 Kurları Güncelle';
+  });
+}
+
+// Tüm döviz + altın kayıtlarını günceller. manual=true ise sonucu kullanıcıya bildirir.
+async function refreshAllRates(manual) {
+  if (kurRefreshing) return false;
+  kurRefreshing = true;
+  if (manual) setAutoBtns(true);
+  try {
+    const rates = await fetchRatesFromAPI();
+    cachedRates = rates;
+    const res = applyRatesToState(rates);
+    if (res.d + res.a > 0) { save(); renderAll(); }
+    if (manual) showToast(res.d + res.a > 0
+      ? '✓ ' + res.d + ' döviz, ' + res.a + ' altın kaydı güncellendi'
+      : 'Güncellenecek kayıt bulunamadı');
+    return true;
+  } catch (e) {
+    if (manual) showToast('Kurlar güncellenemedi: ' + e.message, true);
+    return false;
+  } finally {
+    kurRefreshing = false;
+    if (manual) setAutoBtns(false);
+  }
+}
+
+function toggleAutoKur(on) { state.autoKur = !!on; save(); }
+
+function kurButtonsHtml(mode) {
+  return `<div class="kur-btn-row">
+    <button class="btn-kur-manual" id="kurAutoBtn_${mode}" onclick="refreshAllRates(true)">🔄 Kurları Güncelle</button>
+    <button class="btn-kur-manual" onclick="openKurModal('${mode}')">✏️ Elle Güncelle</button>
+  </div>
+  <label class="kur-auto-toggle"><input type="checkbox" ${state.autoKur !== false ? 'checked' : ''} onchange="toggleAutoKur(this.checked)"/> Uygulama açılırken kurları otomatik güncelle</label>`;
+}
+
+function setFetchBtn(btnId, loading) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  if (loading) { btn.classList.add('loading'); btn.textContent = '⏳ Yükleniyor...'; }
+  else { btn.classList.remove('loading'); btn.textContent = '🔄 Güncel Kuru Çek'; }
+}
+
+function setKurInfo(elId, msg, isErr=false) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'kur-info ' + (isErr ? 'err' : 'ok');
+}
+
+// Form içindeki "Güncel Kuru Çek": formu doldurur + kayıtlı tüm kartları günceller
+async function fetchDovizKur() {
+  setFetchBtn('d_fetch_btn', true);
+  setKurInfo('d_kur_info', 'Kur bilgisi alınıyor...');
+  try {
+    const rates = await fetchRatesFromAPI();
+    cachedRates = rates;
+    let type = document.getElementById('d_type').value;
+    if (type === 'Diğer') type = (document.getElementById('d_custom').value || '').trim().toUpperCase();
+    const r = rates.doviz[type];
+    if (r) {
+      document.getElementById('d_alis').value = fmtRate(r.alis);
+      document.getElementById('d_satis').value = fmtRate(r.satis);
+    }
+    const res = applyRatesToState(rates);
+    if (res.d + res.a > 0) { save(); renderAll(); }
+    if (!r) {
+      setKurInfo('d_kur_info', (type ? type + ' için' : 'Bu döviz için') + ' kur bulunamadı, manuel girin.', true);
+    } else {
+      setKurInfo('d_kur_info', '✓ Kur alındı' + (res.d ? ' · ' + res.d + ' kayıt güncellendi' : '') + ' · ' + formatKurDate(rates.updateDate));
+    }
+  } catch (e) {
+    setKurInfo('d_kur_info', e.message, true);
+  }
+  setFetchBtn('d_fetch_btn', false);
+}
+
+async function fetchAltinKur() {
+  setFetchBtn('a_fetch_btn', true);
+  setKurInfo('a_kur_info', 'Altın fiyatı alınıyor...');
+  try {
+    const rates = await fetchRatesFromAPI();
+    cachedRates = rates;
+    const type = document.getElementById('a_type').value;
+    const code = ALTIN_KODLARI[type];
+    const r = code && rates.altin[code];
+    if (r) {
+      document.getElementById('a_alis').value = fmtRate(r.alis);
+      document.getElementById('a_satis').value = fmtRate(r.satis);
+    }
+    const res = applyRatesToState(rates);
+    if (res.d + res.a > 0) { save(); renderAll(); }
+    if (!r) {
+      setKurInfo('a_kur_info', 'Bu altın türü için kur bulunamadı, manuel girin.', true);
+    } else {
+      setKurInfo('a_kur_info', '✓ Fiyat alındı' + (res.a ? ' · ' + res.a + ' kayıt güncellendi' : '') + ' · ' + formatKurDate(rates.updateDate));
+    }
+  } catch (e) {
+    setKurInfo('a_kur_info', e.message, true);
+  }
+  setFetchBtn('a_fetch_btn', false);
+}
+
+// Tür değişince, daha önce çekilmiş kur varsa formu otomatik doldur
+function onDovizTypeChangeFill() {
+  if (!cachedRates) return;
+  let type = document.getElementById('d_type').value;
+  if (type === 'Diğer') type = (document.getElementById('d_custom').value || '').trim().toUpperCase();
+  const r = cachedRates.doviz[type];
+  if (r) {
+    document.getElementById('d_alis').value = fmtRate(r.alis);
+    document.getElementById('d_satis').value = fmtRate(r.satis);
+  }
+}
+
+function onAltinTypeFill() {
+  if (!cachedRates) return;
+  const code = ALTIN_KODLARI[document.getElementById('a_type').value];
+  const r = code && cachedRates.altin[code];
+  if (r) {
+    document.getElementById('a_alis').value = fmtRate(r.alis);
+    document.getElementById('a_satis').value = fmtRate(r.satis);
+  }
+}
+
+// ============================================================
+// ELLE KUR GÜNCELLEME
+// ============================================================
+let kurModalMode = 'doviz';
+
+function openKurModal(mode) {
+  kurModalMode = mode;
+  const list = mode === 'doviz' ? state.doviz : state.altin;
+  document.getElementById('kurModalTitle').textContent = mode === 'doviz' ? 'Döviz Kurlarını Güncelle' : 'Altın Fiyatlarını Güncelle';
+  // Her cins için bir satır (mevcut kuru ön doldur)
+  const types = [];
+  list.forEach(x => { if (!types.includes(x.type)) types.push(x.type); });
+  const dec = mode === 'doviz' ? 4 : 2;
+  const step = mode === 'doviz' ? '0.0001' : '0.01';
+  document.getElementById('kurModalRows').innerHTML = types.map((t, i) => {
+    const ref = list.find(x => x.type === t);
+    return `<div class="kur-edit-row">
+      <div class="ker-title">${mode === 'doviz' ? '💱' : '🥇'} ${t}</div>
+      <div class="frow">
+        <div><label>Alış (₺)</label><input type="number" id="kur_alis_${i}" step="${step}" inputmode="decimal" value="${ref.alis != null ? Number(ref.alis).toFixed(dec) : ''}"/></div>
+        <div><label>Satış (₺)</label><input type="number" id="kur_satis_${i}" step="${step}" inputmode="decimal" value="${ref.satis != null ? Number(ref.satis).toFixed(dec) : ''}"/></div>
+      </div>
+    </div>`;
+  }).join('');
+  openModal('modalKur');
+}
+
+function saveKurlar() {
+  const mode = kurModalMode;
+  const list = mode === 'doviz' ? state.doviz : state.altin;
+  const types = [];
+  list.forEach(x => { if (!types.includes(x.type)) types.push(x.type); });
+
+  const updates = {};
+  const warnings = [];
+  for (let i = 0; i < types.length; i++) {
+    const alis = parseFloat(document.getElementById('kur_alis_' + i).value);
+    const satis = parseFloat(document.getElementById('kur_satis_' + i).value);
+    if (isNaN(alis) && isNaN(satis)) continue;            // boş → değiştirme
+    if (isNaN(alis) || isNaN(satis) || alis <= 0 || satis <= 0) {
+      alert(types[i] + ': alış ve satış kurunu birlikte, sıfırdan büyük girin.');
+      return;
+    }
+    if (satis < alis) warnings.push(types[i]);
+    updates[types[i]] = { alis, satis };
+  }
+  if (!Object.keys(updates).length) { closeModal('modalKur'); return; }
+  if (warnings.length && !confirm(warnings.join(', ') + ' için satış kuru alıştan düşük. Yine de kaydedilsin mi?')) return;
+
+  list.forEach((x, i) => {
+    if (updates[x.type]) list[i] = { ...x, alis: updates[x.type].alis, satis: updates[x.type].satis };
+  });
+  state.kurLastUpdate = new Date().toLocaleString('tr-TR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  closeModal('modalKur');
+  renderAll();
+  save();
+}
+
+function toggleAssetCard(cardId) {
+  const card = document.getElementById(cardId);
+  if (!card) return;
+  card.classList.toggle('open');
+}
+
+// ============================================================
+// RENDER ALL
+// ============================================================
+function renderAll(){
+  renderPersonRow();
+  if(currentPage==='overview') renderOverview();
+  if(currentPage==='kontrol') renderKontrol();
+  if(currentPage==='nakit') renderNakit();
+  if(currentPage==='kredi') renderKredi();
+  if(currentPage==='mevduat') renderMevduat();
+  if(currentPage==='doviz') renderDoviz();
+  if(currentPage==='altin') renderAltin();
+}
+
+// ============================================================
+// MODAL HELPERS
+// ============================================================
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); editingId=null; }
+
+function fillPersonSelect(selId, defaultPersonId){
+  const sel=document.getElementById(selId);
+  sel.innerHTML=state.persons.map(p=>`<option value="${p.id}" ${p.id===defaultPersonId?'selected':''}>${p.emoji||'👤'} ${p.name}</option>`).join('');
+}
+
+// ============================================================
+// PERSON CRUD
+// ============================================================
+function openPersonModal(){ editingId=null; document.getElementById('p_name').value=''; document.getElementById('p_emoji').value=''; openModal('modalPerson'); }
+function savePerson(){
+  const name=document.getElementById('p_name').value.trim();
+  if(!name){ alert('Ad giriniz.'); return; }
+  const emoji=document.getElementById('p_emoji').value.trim();
+  state.persons.push({id:uid(),name,emoji});
+  closeModal('modalPerson'); renderAll(); save();
+}
+function deletePerson(id){
+  if(!confirm('Bu kişiyi ve tüm verilerini silmek istediğinize emin misiniz?')) return;
+  state.persons=state.persons.filter(p=>p.id!==id);
+  ['nakit','kredi','mevduat','doviz','altin'].forEach(k=>{ state[k]=state[k].filter(x=>x.personId!==id); });
+  if(selectedPerson===id) selectedPerson='all';
+  renderAll(); save();
+}
+
+// ============================================================
+// NAKİT CRUD
+// ============================================================
+function openNakitModal(){
+  if(!state.persons.length){ alert('Önce kişi ekleyin.'); return; }
+  editingId=null;
+  fillPersonSelect('n_person', selectedPerson!=='all'?selectedPerson:state.persons[0]?.id);
+  document.getElementById('n_birikim').value='';
+  document.getElementById('n_faiz').value='';
+  document.getElementById('n_vergi').value='15';
+  document.getElementById('n_cuzdan').value='';
+  openModal('modalNakit');
+}
+function openNakitEdit(id){
+  const n=state.nakit.find(x=>x.id===id); if(!n) return;
+  editingId=id;
+  fillPersonSelect('n_person',n.personId);
+  document.getElementById('n_birikim').value=n.birikim||'';
+  document.getElementById('n_faiz').value=n.faizYillik||'';
+  document.getElementById('n_vergi').value=n.vergi??15;
+  document.getElementById('n_cuzdan').value=n.cuzdan||'';
+  openModal('modalNakit');
+}
+function saveNakit(){
+  const personId=document.getElementById('n_person').value;
+  const birikim=parseFloat(document.getElementById('n_birikim').value)||0;
+  const faizYillik=parseFloat(document.getElementById('n_faiz').value)||0;
+  const vergi=parseFloat(document.getElementById('n_vergi').value)||15;
+  const cuzdan=parseFloat(document.getElementById('n_cuzdan').value)||0;
+  if(editingId){ const i=state.nakit.findIndex(x=>x.id===editingId); state.nakit[i]={...state.nakit[i],personId,birikim,faizYillik,vergi,cuzdan}; }
+  else { state.nakit.push({id:uid(),personId,birikim,faizYillik,vergi,cuzdan}); }
+  closeModal('modalNakit'); renderAll(); save();
+}
+
+// ============================================================
+// KREDİ CRUD
+// ============================================================
+function openKrediModal(){
+  if(!state.persons.length){ alert('Önce kişi ekleyin.'); return; }
+  editingId=null;
+  document.getElementById('krediModalTitle').textContent='Kredi Kartı Ekle';
+  fillPersonSelect('k_person', selectedPerson!=='all'?selectedPerson:state.persons[0]?.id);
+  document.getElementById('k_name').value='';
+  document.getElementById('k_borc').value='';
+  document.getElementById('k_kesim').value='';
+  document.getElementById('k_odeme').value='';
+  document.getElementById('k_dongu').checked=false; document.getElementById('k_taksit_wrap').style.display='none';
+  document.getElementById('k_taksit').value=''; document.getElementById('k_kalan').value='';
+  openModal('modalKredi');
+}
+function openKrediEdit(id){
+  const k=state.kredi.find(x=>x.id===id); if(!k) return;
+  editingId=id;
+  document.getElementById('krediModalTitle').textContent='Kredi Kartını Düzenle';
+  fillPersonSelect('k_person',k.personId);
+  document.getElementById('k_name').value=k.name;
+  document.getElementById('k_borc').value=k.borc;
+  document.getElementById('k_kesim').value=k.kesimTarih;
+  document.getElementById('k_odeme').value=k.odemeTarih;
+  document.getElementById('k_dongu').checked=!!k.dongu; document.getElementById('k_taksit_wrap').style.display=k.dongu?'block':'none';
+  document.getElementById('k_taksit').value=k.taksit||''; document.getElementById('k_kalan').value=k.kalan!=null?k.kalan:'';
+  openModal('modalKredi');
+}
+function saveKredi(){
+  const personId=document.getElementById('k_person').value;
+  const name=document.getElementById('k_name').value.trim();
+  const borc=parseFloat(document.getElementById('k_borc').value);
+  const kesimTarih=document.getElementById('k_kesim').value;
+  const odemeTarih=document.getElementById('k_odeme').value;
+  if(!name||isNaN(borc)||!kesimTarih||!odemeTarih){ alert('Lütfen tüm alanları doldurun.'); return; }
+  const dongu=document.getElementById('k_dongu').checked;
+  const tk=parseFloat(document.getElementById('k_taksit').value), kl=parseInt(document.getElementById('k_kalan').value,10);
+  const extra={dongu, taksit:(dongu&&tk>0)?tk:null, kalan:(dongu&&tk>0&&!isNaN(kl)&&kl>=0)?kl:null};
+  if(editingId){ const i=state.kredi.findIndex(x=>x.id===editingId); state.kredi[i]={...state.kredi[i],personId,name,borc,kesimTarih,odemeTarih,...extra}; }
+  else { state.kredi.push({id:uid(),personId,name,borc,kesimTarih,odemeTarih,...extra}); }
+  closeModal('modalKredi'); renderAll(); save();
+}
+
+// ============================================================
+// MEVDUAT CRUD
+// ============================================================
+function openMevduatModal(){
+  if(!state.persons.length){ alert('Önce kişi ekleyin.'); return; }
+  editingId=null;
+  document.getElementById('mevduatModalTitle').textContent='Mevduat Ekle';
+  fillPersonSelect('m_person', selectedPerson!=='all'?selectedPerson:state.persons[0]?.id);
+  ['m_name','m_bank','m_principal','m_rate','m_tenor'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('m_tax').value='15';
+  document.getElementById('m_start').value=today();
+  openModal('modalMevduat');
+}
+function openMevduatEdit(id){
+  const m=state.mevduat.find(x=>x.id===id); if(!m) return;
+  editingId=id;
+  document.getElementById('mevduatModalTitle').textContent='Mevduatı Düzenle';
+  fillPersonSelect('m_person',m.personId);
+  document.getElementById('m_name').value=m.name;
+  document.getElementById('m_bank').value=m.bank;
+  document.getElementById('m_principal').value=m.principal;
+  document.getElementById('m_rate').value=m.rate;
+  document.getElementById('m_tax').value=m.tax??15;
+  document.getElementById('m_tenor').value=m.tenor;
+  document.getElementById('m_start').value=m.startDate;
+  openModal('modalMevduat');
+}
+function saveMevduat(){
+  const personId=document.getElementById('m_person').value;
+  const name=document.getElementById('m_name').value.trim();
+  const bank=document.getElementById('m_bank').value.trim();
+  const principal=parseFloat(document.getElementById('m_principal').value);
+  const rate=parseFloat(document.getElementById('m_rate').value);
+  const tax=parseFloat(document.getElementById('m_tax').value)||15;
+  const tenor=parseInt(document.getElementById('m_tenor').value);
+  const startDate=document.getElementById('m_start').value;
+  if(!name||!bank||isNaN(principal)||isNaN(rate)||isNaN(tenor)||!startDate){ alert('Lütfen tüm alanları doldurun.'); return; }
+  const end=new Date(startDate); end.setDate(end.getDate()+tenor);
+  const endDate=end.toISOString().split('T')[0];
+  if(editingId){ const i=state.mevduat.findIndex(x=>x.id===editingId); state.mevduat[i]={...state.mevduat[i],personId,name,bank,principal,rate,tax,tenor,startDate,endDate}; }
+  else { state.mevduat.push({id:uid(),personId,name,bank,principal,rate,tax,tenor,startDate,endDate}); }
+  closeModal('modalMevduat'); renderAll(); save();
+}
+
+// ============================================================
+// DÖVİZ CRUD
+// ============================================================
+function onDovizTypeChange(){
+  const v=document.getElementById('d_type').value;
+  document.getElementById('d_custom_wrap').style.display=v==='Diğer'?'block':'none';
+  onDovizTypeChangeFill();
+}
+function openDovizModal(){
+  if(!state.persons.length){ alert('Önce kişi ekleyin.'); return; }
+  editingId=null;
+  document.getElementById('dovizModalTitle').textContent='Döviz Ekle';
+  fillPersonSelect('d_person', selectedPerson!=='all'?selectedPerson:state.persons[0]?.id);
+  document.getElementById('d_type').value='USD';
+  document.getElementById('d_custom_wrap').style.display='none';
+  ['d_amount','d_alis','d_satis','d_maliyet'].forEach(id=>document.getElementById(id).value='');
+  openModal('modalDoviz');
+}
+function openDovizEdit(id){
+  const d=state.doviz.find(x=>x.id===id); if(!d) return;
+  editingId=id;
+  document.getElementById('dovizModalTitle').textContent='Döviz Düzenle';
+  fillPersonSelect('d_person',d.personId);
+  const knownTypes=['USD','EUR','GBP','CHF'];
+  if(knownTypes.includes(d.type)){ document.getElementById('d_type').value=d.type; document.getElementById('d_custom_wrap').style.display='none'; }
+  else { document.getElementById('d_type').value='Diğer'; document.getElementById('d_custom_wrap').style.display='block'; document.getElementById('d_custom').value=d.type; }
+  document.getElementById('d_amount').value=d.amount;
+  document.getElementById('d_alis').value=d.alis;
+  document.getElementById('d_satis').value=d.satis;
+  document.getElementById('d_maliyet').value=d.maliyet||'';
+  openModal('modalDoviz');
+}
+function saveDoviz(){
+  const personId=document.getElementById('d_person').value;
+  let type=document.getElementById('d_type').value;
+  if(type==='Diğer'){ type=document.getElementById('d_custom').value.trim(); if(!type){alert('Döviz adı giriniz.'); return;} }
+  const amount=parseFloat(document.getElementById('d_amount').value);
+  const alis=parseFloat(document.getElementById('d_alis').value);
+  const satis=parseFloat(document.getElementById('d_satis').value);
+  const mv=parseFloat(document.getElementById('d_maliyet').value); const maliyet=(isNaN(mv)||mv<=0)?null:mv;
+  if(isNaN(amount)||isNaN(alis)||isNaN(satis)){ alert('Lütfen tüm alanları doldurun.'); return; }
+  if(editingId){ const i=state.doviz.findIndex(x=>x.id===editingId); state.doviz[i]={...state.doviz[i],personId,type,amount,alis,satis,maliyet}; }
+  else { state.doviz.push({id:uid(),personId,type,amount,alis,satis,maliyet}); }
+  const now = new Date().toLocaleString('tr-TR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  state.kurLastUpdate = now;
+  closeModal('modalDoviz'); renderAll(); save();
+}
+
+// ============================================================
+// ALTIN CRUD
+// ============================================================
+function openAltinModal(){
+  if(!state.persons.length){ alert('Önce kişi ekleyin.'); return; }
+  editingId=null;
+  document.getElementById('altinModalTitle').textContent='Altın Ekle';
+  fillPersonSelect('a_person', selectedPerson!=='all'?selectedPerson:state.persons[0]?.id);
+  document.getElementById('a_type').value='Gram Altın';
+  ['a_amount','a_alis','a_satis','a_maliyet'].forEach(id=>document.getElementById(id).value='');
+  openModal('modalAltin');
+}
+function openAltinEdit(id){
+  const a=state.altin.find(x=>x.id===id); if(!a) return;
+  editingId=id;
+  document.getElementById('altinModalTitle').textContent='Altın Düzenle';
+  fillPersonSelect('a_person',a.personId);
+  document.getElementById('a_type').value=a.type;
+  document.getElementById('a_amount').value=a.amount;
+  document.getElementById('a_alis').value=a.alis;
+  document.getElementById('a_satis').value=a.satis;
+  document.getElementById('a_maliyet').value=a.maliyet||'';
+  openModal('modalAltin');
+}
+function saveAltin(){
+  const personId=document.getElementById('a_person').value;
+  const type=document.getElementById('a_type').value;
+  const amount=parseFloat(document.getElementById('a_amount').value);
+  const alis=parseFloat(document.getElementById('a_alis').value);
+  const satis=parseFloat(document.getElementById('a_satis').value);
+  const mv=parseFloat(document.getElementById('a_maliyet').value); const maliyet=(isNaN(mv)||mv<=0)?null:mv;
+  if(isNaN(amount)||isNaN(alis)||isNaN(satis)){ alert('Lütfen tüm alanları doldurun.'); return; }
+  if(editingId){ const i=state.altin.findIndex(x=>x.id===editingId); state.altin[i]={...state.altin[i],personId,type,amount,alis,satis,maliyet}; }
+  else { state.altin.push({id:uid(),personId,type,amount,alis,satis,maliyet}); }
+  const now2 = new Date().toLocaleString('tr-TR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  state.kurLastUpdate = now2;
+  closeModal('modalAltin'); renderAll(); save();
+}
+
+// ============================================================
+// GENERIC DELETE
+// ============================================================
+function deleteItem(cat,id){
+  if(!confirm('Silmek istediğinize emin misiniz?')) return;
+  state[cat]=state[cat].filter(x=>x.id!==id);
+  renderAll(); save();
+}
+
+// ============================================================
+// CLOSE OVERLAYS ON BG CLICK
+// ============================================================
+document.querySelectorAll('.overlay').forEach(el=>{
+  el.addEventListener('click',function(e){ if(e.target===this) closeModal(this.id); });
+});
+
+// ============================================================
+// KONTROL - ANLIK DEĞER KAYIT / KARŞILAŞTIRMA
+// ============================================================
+const SNAPSHOT_KEY = 'finans_snapshots';
+let ctrlPeriod = 7; // seçili periyot
+
+function getSnapshots() {
+  try { return JSON.parse(localStorage.getItem(SNAPSHOT_KEY) || '[]'); }
+  catch(e) { return []; }
+}
+
+function saveSnapshots(snaps) {
+  localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(snaps));
+}
+
+function takeSnapshot() {
+  // Anlık değerleri hesapla
+  const snap = buildSnapshot();
+  const snaps = getSnapshots();
+  // Aynı gün zaten varsa üzerine yaz
+  const todayStr = snap.date;
+  const idx = snaps.findIndex(s => s.date === todayStr);
+  if (idx >= 0) snaps[idx] = snap;
+  else snaps.push(snap);
+  // 60 günden eski kayıtları sil
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 60);
+  const filtered = snaps.filter(s => new Date(s.date) >= cutoff);
+  saveSnapshots(filtered);
+  return snap;
+}
+
+function buildSnapshot() {
+  const today = new Date().toISOString().split('T')[0];
+  // Mevduat
+  let mevAnapara=0, mevNetEl=0, mevNetTot=0, mevDaily=0;
+  state.mevduat.forEach(m => {
+    const c = calcMevduat(m);
+    mevAnapara += m.principal;
+    mevNetEl += c.netEl;
+    mevNetTot += c.netTot;
+    if(mevduatStatus(m)!=='expired') mevDaily += c.dailyNet;
+  });
+  // Nakit
+  let birikim=0, cuzdan=0, nakitDaily=0;
+  state.nakit.forEach(n => {
+    birikim += n.birikim||0; cuzdan += n.cuzdan||0;
+    const r=(n.faizYillik||0)/100, tax=(n.vergi??15)/100;
+    nakitDaily += (n.birikim||0)*r/365*(1-tax);
+  });
+  // Kredi
+  let kreBorc=0;
+  state.kredi.forEach(k => kreBorc += k.borc||0);
+  // Döviz
+  let dovizTL=0;
+  state.doviz.forEach(d => dovizTL += d.amount*midRate(d.alis,d.satis));
+  // Altın
+  let altinTL=0;
+  state.altin.forEach(a => altinTL += a.amount*midRate(a.alis,a.satis));
+  const netPara=(birikim+cuzdan)-kreBorc;
+  const toplamAnapara=mevAnapara+netPara+dovizTL+altinTL;
+  return {
+    date: today,
+    toplamAnapara, mevAnapara, mevNetEl, mevNetTot, mevDaily,
+    birikim, cuzdan, nakitDaily,
+    kreBorc, dovizTL, altinTL, netPara
+  };
+}
+
+function getSnapshotForDate(daysAgo) {
+  const snaps = getSnapshots();
+  const target = new Date(); target.setDate(target.getDate() - daysAgo);
+  // En yakın tarihi bul (tam eşleşme yoksa 1-2 gün yakın)
+  let best = null, bestDiff = Infinity;
+  snaps.forEach(s => {
+    const d = Math.abs((new Date(s.date) - target) / 86400000);
+    if (d <= 3 && d < bestDiff) { best = s; bestDiff = d; }
+  });
+  return best;
+}
+
+function renderKontrol() {
+  const page = document.getElementById('pageKontrol');
+  const snaps = getSnapshots();
+  const todaySnap = buildSnapshot(); // anlık hesap (kayıtlı değil, canlı)
+  const pastSnap = getSnapshotForDate(ctrlPeriod);
+  const lastSaved = snaps.length ? snaps[snaps.length-1].date : null;
+  const lastSavedFmt = lastSaved ? new Date(lastSaved).toLocaleDateString('tr-TR', {day:'2-digit',month:'short',year:'numeric'}) : 'Henüz kaydedilmedi';
+
+  let html = `
+    <button class="ctrl-save-btn" onclick="manualSnapshot()">
+      📸 Bugünün Değerlerini Kaydet
+    </button>
+    <div class="ctrl-last-save">Son kayıt: ${lastSavedFmt} · Toplam ${snaps.length} kayıt</div>
+    <div class="ctrl-period-tabs">
+      <button class="ctrl-tab ${ctrlPeriod===7?'active':''}" onclick="setCtrlPeriod(7)">7 Gün</button>
+      <button class="ctrl-tab ${ctrlPeriod===15?'active':''}" onclick="setCtrlPeriod(15)">15 Gün</button>
+      <button class="ctrl-tab ${ctrlPeriod===30?'active':''}" onclick="setCtrlPeriod(30)">30 Gün</button>
+    </div>`;
+
+  if (!pastSnap) {
+    html += `<div class="ctrl-no-data">
+      <div class="ei">📅</div>
+      <p>${ctrlPeriod} gün öncesine ait kayıt bulunamadı.<br><br>
+      Her gün "Bugünün Değerlerini Kaydet" butonuna basarak geçmiş takibi oluşturabilirsiniz.</p>
+    </div>`;
+    page.innerHTML = html;
+    return;
+  }
+
+  const pastDateFmt = new Date(pastSnap.date).toLocaleDateString('tr-TR', {day:'2-digit',month:'short'});
+
+  function ctrlRow(label, todayVal, pastVal, currency=true) {
+    const diff = todayVal - pastVal;
+    const pct = pastVal !== 0 ? (diff/Math.abs(pastVal)*100) : 0;
+    const cls = diff > 0 ? 'up' : diff < 0 ? 'down' : 'flat';
+    const arrow = diff > 0 ? '▲' : diff < 0 ? '▼' : '–';
+    const fmtFn = currency ? fmt : (v => fmtAmt(v,2));
+    return `<div class="ctrl-row">
+      <div class="ctrl-row-label">${label}</div>
+      <div class="ctrl-compare">
+        <div class="ctrl-val-box">
+          <div class="cv-lbl">${pastDateFmt}</div>
+          <div class="cv-val">${fmtFn(pastVal)}</div>
+        </div>
+        <div class="ctrl-arrow">→</div>
+        <div class="ctrl-val-box">
+          <div class="cv-lbl">Bugün</div>
+          <div class="cv-val">${fmtFn(todayVal)}</div>
+        </div>
+        <div class="ctrl-diff">
+          <div class="cd-val ${cls}">${arrow} ${fmtFn(Math.abs(diff))}</div>
+          <div class="cd-pct">${pct>=0?'+':''}${pct.toFixed(1)}%</div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  html += `
+    <div class="ctrl-section">
+      <div class="ctrl-section-title">💰 Genel</div>
+      ${ctrlRow('Toplam Anapara', todaySnap.toplamAnapara, pastSnap.toplamAnapara)}
+      ${ctrlRow('Net Para (Nakit-Borç)', todaySnap.netPara, pastSnap.netPara)}
+    </div>
+    <div class="ctrl-section">
+      <div class="ctrl-section-title">🏦 Mevduat</div>
+      ${ctrlRow('Mevduat Anapara', todaySnap.mevAnapara, pastSnap.mevAnapara)}
+      ${ctrlRow('Net Kazanç (şimdiye)', todaySnap.mevNetEl, pastSnap.mevNetEl)}
+      ${ctrlRow('Günlük Net Kazanç', todaySnap.mevDaily, pastSnap.mevDaily)}
+    </div>
+    <div class="ctrl-section">
+      <div class="ctrl-section-title">💵 Nakit</div>
+      ${ctrlRow('Birikim Hesabı', todaySnap.birikim, pastSnap.birikim)}
+      ${ctrlRow('Cüzdan', todaySnap.cuzdan, pastSnap.cuzdan)}
+      ${ctrlRow('Günlük Faiz', todaySnap.nakitDaily, pastSnap.nakitDaily)}
+    </div>
+    <div class="ctrl-section">
+      <div class="ctrl-section-title">💳 Kredi Kartı</div>
+      ${ctrlRow('Toplam Borç', todaySnap.kreBorc, pastSnap.kreBorc)}
+    </div>
+    <div class="ctrl-section">
+      <div class="ctrl-section-title">💱 Döviz</div>
+      ${ctrlRow('Döviz TL Karşılığı', todaySnap.dovizTL, pastSnap.dovizTL)}
+    </div>
+    <div class="ctrl-section">
+      <div class="ctrl-section-title">🥇 Altın</div>
+      ${ctrlRow('Altın TL Karşılığı', todaySnap.altinTL, pastSnap.altinTL)}
+    </div>`;
+
+  page.innerHTML = html;
+}
+
+function setCtrlPeriod(p) {
+  ctrlPeriod = p;
+  renderKontrol();
+}
+
+function manualSnapshot() {
+  const snap = takeSnapshot();
+  const dateFmt = new Date(snap.date).toLocaleDateString('tr-TR', {day:'2-digit',month:'short',year:'numeric'});
+  renderKontrol();
+  // Kısa bildirim
+  const btn = document.querySelector('.ctrl-save-btn');
+  if (btn) { btn.textContent = '✓ Kaydedildi! ' + dateFmt; setTimeout(()=>{ if(btn) btn.innerHTML='📸 Bugünün Değerlerini Kaydet'; }, 2000); }
+}
+
+// Uygulama açılınca otomatik snapshot al
+function autoSnapshot() {
+  const snaps = getSnapshots();
+  const today = new Date().toISOString().split('T')[0];
+  const todayExists = snaps.some(s => s.date === today);
+  if (!todayExists && state.mevduat.length + state.nakit.length + state.doviz.length + state.altin.length > 0) {
+    takeSnapshot();
+  }
+}
+
+// ============================================================
+// BACKUP / RESTORE
+// ============================================================
+const LASTBACKUP_KEY='finans_lastbackup';
+function markBackup(){ try{ localStorage.setItem(LASTBACKUP_KEY,String(Date.now())); }catch(e){} }
+function backupBannerHtml(){
+  const has=state.mevduat.length||state.nakit.length||state.kredi.length||state.doviz.length||state.altin.length;
+  if(!has) return '';
+  let last=0; try{ last=parseInt(localStorage.getItem(LASTBACKUP_KEY)||'0',10)||0; }catch(e){}
+  const days=last?Math.floor((Date.now()-last)/86400000):null;
+  if(last && days<3) return '';
+  const msg=last?`Son yedeğiniz ${days} gün önce alındı.`:'Henüz yedek almadınız.';
+  return `<div style="background:#FFF3CD;border:1.5px solid #e0b800;border-radius:12px;padding:12px;margin-bottom:12px;">
+    <div style="font-size:14px;font-weight:700;color:#5c4400;margin-bottom:4px;">⚠️ Yedek hatırlatması</div>
+    <div style="font-size:13px;color:#5c4400;margin-bottom:8px;">${msg} Veriler yalnızca bu telefonda saklanıyor.</div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn-backup export" style="flex:1;padding:10px;" onclick="shareBackup()">📤 Paylaş / Kaydet</button>
+      <button class="btn-backup import" style="flex:1;padding:10px;" onclick="exportBackup()">⬇️ İndir</button>
+    </div></div>`;
+}
+function _b64(buf){ let b=''; new Uint8Array(buf).forEach(c=>b+=String.fromCharCode(c)); return btoa(b); }
+function _unb64(str){ return Uint8Array.from(atob(str),c=>c.charCodeAt(0)); }
+async function _deriveKey(pass,salt){
+  const km=await crypto.subtle.importKey('raw',new TextEncoder().encode(pass),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:200000,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+}
+async function encryptBackup(obj,pass){
+  const salt=crypto.getRandomValues(new Uint8Array(16)), iv=crypto.getRandomValues(new Uint8Array(12));
+  const key=await _deriveKey(pass,salt);
+  const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,new TextEncoder().encode(JSON.stringify(obj)));
+  return {_enc:1,_version:2,alg:'AES-GCM/PBKDF2-SHA256',salt:_b64(salt),iv:_b64(iv),data:_b64(ct)};
+}
+async function decryptBackup(env,pass){
+  const key=await _deriveKey(pass,_unb64(env.salt));
+  const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:_unb64(env.iv)},key,_unb64(env.data));
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+async function buildBackupFile(){
+  const snapshots=getSnapshots();
+  let backup={...state,_snapshots:snapshots,_backupDate:new Date().toISOString(),_version:2};
+  const pass=(document.getElementById('backupPass')||{}).value||'';
+  if(pass){
+    if(!(window.crypto&&crypto.subtle)) throw new Error('Bu tarayıcı şifrelemeyi desteklemiyor');
+    backup=await encryptBackup(backup,pass);
+  }
+  const tarih=new Date().toLocaleDateString('tr-TR').replace(/\./g,'-');
+  const name=`finans_yedek_${tarih}${pass?'_sifreli':''}.json`;
+  return {blob:new Blob([JSON.stringify(backup,null,2)],{type:'application/json'}),name,count:snapshots.length,enc:!!pass};
+}
+function _backupMsg(t,ok){ const i=document.getElementById('backupInfo'); if(i){i.textContent=t;i.style.color=ok?'var(--green)':'var(--red)';} }
+async function shareBackup(){
+  let r; try{ r=await buildBackupFile(); }catch(e){ _backupMsg('✗ '+e.message,false); return; }
+  try{
+    const file=new File([r.blob],r.name,{type:'application/json'});
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({files:[file],title:'Finans Takip Yedeği'});
+      markBackup(); _backupMsg(`✓ Yedek paylaşıldı${r.enc?' (şifreli)':''} (${r.count} kontrol kaydı dahil)`,true);
+      renderAll(); return;
+    }
+  }catch(e){ if(e&&e.name==='AbortError') return; }
+  exportBackup(r);
+}
+async function exportBackup(pre){
+  let r=pre&&pre.blob?pre:null;
+  try{ if(!r) r=await buildBackupFile(); }catch(e){ _backupMsg('✗ '+e.message,false); return; }
+  const url=URL.createObjectURL(r.blob);
+  const a=document.createElement('a'); a.href=url; a.download=r.name; a.click(); URL.revokeObjectURL(url);
+  markBackup(); try{renderAll();}catch(e){}
+  _backupMsg(`✓ Yedek indirildi${r.enc?' (şifreli)':''}! (${r.count} kontrol kaydı dahil)`,true);
+}
+
+function importBackup(event){
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async function(e){
+    try {
+      let imported = JSON.parse(e.target.result);
+      if (imported._enc) {
+        let pass = (document.getElementById('backupPass')||{}).value || '';
+        if (!pass) pass = prompt('Bu yedek şifreli. Şifreyi girin:') || '';
+        if (!pass) { event.target.value=''; return; }
+        try { imported = await decryptBackup(imported, pass); }
+        catch(_) { throw new Error('Şifre yanlış veya dosya bozuk'); }
+      }
+      // Temel validasyon
+      if (!imported.persons || !imported.mevduat || !imported.nakit) {
+        throw new Error('Geçersiz yedek dosyası');
+      }
+      const snapCount = imported._snapshots ? imported._snapshots.length : 0;
+      if (!confirm(`Bu yedek ${imported.persons.length} kişi, ${imported.mevduat.length} mevduat ve ${snapCount} kontrol kaydı içeriyor. Mevcut veriler silinecek. Devam edilsin mi?`)) return;
+
+      // Snapshot'ları ayrıca localStorage'a yükle
+      if (imported._snapshots && Array.isArray(imported._snapshots)) {
+        saveSnapshots(imported._snapshots);
+      }
+
+      // _snapshots ve meta alanları state'e alma
+      const { _snapshots, _backupDate, _version, ...stateData } = imported;
+      state = {...state, ...stateData};
+      save();
+      renderAll();
+      document.getElementById('backupInfo').textContent = `✓ Veriler yüklendi! (${snapCount} kontrol kaydı dahil)`;
+      document.getElementById('backupInfo').style.color = 'var(--green)';
+    } catch(err) {
+      document.getElementById('backupInfo').textContent = '✗ Hata: ' + err.message;
+      document.getElementById('backupInfo').style.color = 'var(--red)';
+    }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+// ============================================================
+// PIN / GÜVENLİK
+// ============================================================
+const PIN_KEY   = 'finans_pin';
+const SEC_KEY   = 'finans_sec';
+let pinBuffer   = '';
+let pinLength   = 4;
+let pinMode     = 'lock'; // 'lock' | 'setup'
+
+function loadPin() {
+  const stored = localStorage.getItem(PIN_KEY);
+  if (stored) {
+    const p = JSON.parse(stored);
+    pinLength = p.len || 4;
+    return p;
+  }
+  return null;
+}
+
+function initLock() {
+  const pin = loadPin();
+  if (pin && pin.hash) {
+    // PIN kurulu → kilit ekranını göster
+    updatePinDots();
+    showLockDots(pinLength);
+    document.getElementById('lockScreen').classList.add('visible');
+  } else {
+    // PIN yok → direkt aç, kurulum öner
+    unlockApp();
+    setTimeout(() => {
+      if (!loadPin()) showFirstTimeSetup();
+    }, 300);
+  }
+}
+
+function showFirstTimeSetup() {
+  if (confirm('Uygulamanızı PIN ile korumak ister misiniz?')) {
+    openPinSetup();
+  }
+}
+
+function showLockDots(len) {
+  const container = document.getElementById('pinDots');
+  container.innerHTML = '';
+  for (let i = 0; i < len; i++) {
+    const d = document.createElement('div');
+    d.className = 'pin-dot';
+    d.id = 'dot' + i;
+    container.appendChild(d);
+  }
+}
+
+function updatePinDots() {
+  for (let i = 0; i < pinLength; i++) {
+    const d = document.getElementById('dot' + i);
+    if (d) d.className = 'pin-dot' + (i < pinBuffer.length ? ' filled' : '');
+  }
+}
+
+function pinPress(digit) {
+  if (pinBuffer.length >= pinLength) return;
+  pinBuffer += digit;
+  updatePinDots();
+  if (pinBuffer.length === pinLength) {
+    setTimeout(checkPin, 100);
+  }
+}
+
+function pinDel() {
+  if (!pinBuffer.length) return;
+  pinBuffer = pinBuffer.slice(0, -1);
+  updatePinDots();
+}
+
+async function hashPin(pin) {
+  const enc = new TextEncoder().encode(pin + 'finans_salt_2024');
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function checkPin() {
+  const stored = loadPin();
+  if (!stored) { unlockApp(); return; }
+  const h = await hashPin(pinBuffer);
+  if (h === stored.hash) {
+    // Doğru PIN
+    document.getElementById('pinError').textContent = '';
+    document.getElementById('lockScreen').classList.remove('visible');
+    unlockApp();
+  } else {
+    // Yanlış PIN
+    document.querySelectorAll('.pin-dot').forEach(d => d.className = 'pin-dot error');
+    document.getElementById('pinError').textContent = 'Hatalı PIN! Tekrar deneyin.';
+    setTimeout(() => {
+      pinBuffer = '';
+      updatePinDots();
+      document.getElementById('pinError').textContent = '';
+    }, 800);
+  }
+}
+
+function requestPersistentStorage(){
+  try{ if(navigator.storage && navigator.storage.persist){ navigator.storage.persist().catch(()=>{}); } }catch(e){}
+}
+function unlockApp() {
+  updatePrivacyBtn();
+  requestPersistentStorage();
+  pinBuffer = '';
+  load();
+  renderAll();
+  setTimeout(checkAlerts, 500);
+  // Kurlar güncellenince snapshot alınır (güncel değerler kontrol sekmesine yazılsın)
+  const needRates = state.autoKur !== false && (state.doviz.length || state.altin.length);
+  (needRates ? refreshAllRates(false) : Promise.resolve()).then(() => autoSnapshot(), () => autoSnapshot());
+}
+
+function checkAlerts() {
+  const alerts = [];
+  const today = new Date(); today.setHours(0,0,0,0);
+  const todayStr = today.toISOString().split('T')[0];
+
+  // KREDİ KARTI kontrolleri
+  state.kredi.forEach(k => {
+    const dlOdeme = daysLeft(k.odemeTarih);
+    const dlKesim = daysLeft(k.kesimTarih);
+
+    // Bugün son ödeme günü
+    if (dlOdeme === 0) {
+      alerts.push({
+        type: 'danger',
+        icon: '🚨',
+        title: `${k.name} — BUGÜN SON ÖDEME!`,
+        sub: `${personName(k.personId)} · Son ödeme tarihi bugün!`,
+        amount: fmt(k.borc),
+        daysText: 'BUGÜN',
+        daysCls: 'red',
+        odendi: true,
+        kreId: k.id
+      });
+    }
+    // Yarın son ödeme
+    else if (dlOdeme === 1) {
+      alerts.push({
+        type: 'danger',
+        icon: '⚠️',
+        title: `${k.name} — Son Ödeme Yarın`,
+        sub: `${personName(k.personId)} · ${new Date(k.odemeTarih).toLocaleDateString('tr-TR')}`,
+        amount: fmt(k.borc),
+        daysText: '1 gün kaldı',
+        daysCls: 'red',
+        odendi: true,
+        kreId: k.id
+      });
+    }
+    // 2-3 gün kaldı
+    else if (dlOdeme <= 3) {
+      alerts.push({
+        type: 'warning',
+        icon: '💳',
+        title: `${k.name} — Son Ödeme Yaklaşıyor`,
+        sub: `${personName(k.personId)} · ${new Date(k.odemeTarih).toLocaleDateString('tr-TR')}`,
+        amount: fmt(k.borc),
+        daysText: dlOdeme + ' gün kaldı',
+        daysCls: 'amber',
+        odendi: false,
+        kreId: null
+      });
+    }
+
+    // Bugün hesap kesim günü
+    if (dlKesim === 0) {
+      alerts.push({
+        type: 'warning',
+        icon: '📋',
+        title: `${k.name} — Bugün Hesap Kesim Günü`,
+        sub: `${personName(k.personId)} · Hesap kesildi, ödeme süresi başladı`,
+        amount: fmt(k.borc),
+        daysText: 'Bugün kesim',
+        daysCls: 'amber',
+        odendi: false,
+        kreId: null
+      });
+    }
+  });
+
+  // MEVDUAT kontrolleri
+  state.mevduat.forEach(m => {
+    const dl = daysLeft(m.endDate);
+    const c = calcMevduat(m);
+
+    // Bugün vade bitiyor
+    if (dl === 0) {
+      alerts.push({
+        type: 'mevduat',
+        icon: '🏦',
+        title: `${m.name} — Vade Bugün Bitiyor!`,
+        sub: `${personName(m.personId)} · ${m.bank} · Yenilemyi unutmayın`,
+        amount: fmt(m.principal + c.netTot),
+        daysText: 'Bugün',
+        daysCls: 'green',
+        odendi: false,
+        kreId: null
+      });
+    }
+    // Yarın vade bitiyor
+    else if (dl === 1) {
+      alerts.push({
+        type: 'mevduat',
+        icon: '🏦',
+        title: `${m.name} — Vade Yarın Bitiyor`,
+        sub: `${personName(m.personId)} · ${m.bank}`,
+        amount: fmt(m.principal + c.netTot),
+        daysText: '1 gün kaldı',
+        daysCls: 'green',
+        odendi: false,
+        kreId: null
+      });
+    }
+    // 2-5 gün kaldı
+    else if (dl <= 5) {
+      alerts.push({
+        type: 'mevduat',
+        icon: '🏦',
+        title: `${m.name} — Vade Yaklaşıyor`,
+        sub: `${personName(m.personId)} · ${m.bank} · ${new Date(m.endDate).toLocaleDateString('tr-TR')}`,
+        amount: fmt(m.principal + c.netTot),
+        daysText: dl + ' gün kaldı',
+        daysCls: 'green',
+        odendi: false,
+        kreId: null
+      });
+    }
+  });
+
+  if (!alerts.length) return; // Uyarı yoksa modal açma
+
+  // Uyarıları render et
+  const subTitle = alerts.length === 1 ? '1 bekleyen işlem' : alerts.length + ' bekleyen işlem';
+  document.getElementById('alertSubTitle').textContent = subTitle;
+
+  document.getElementById('alertList').innerHTML = alerts.map((a, idx) => `
+    <div class="alert-item ${a.type}" id="alertItem_${idx}">
+      <div class="alert-item-icon">${a.icon}</div>
+      <div class="alert-item-body">
+        <div class="alert-item-title">${a.title}</div>
+        <div class="alert-item-sub">${a.sub}</div>
+        ${a.odendi ? `<button class="alert-odendi-btn" onclick="markOdendi('${a.kreId}', ${idx})">✓ Ödendi</button>` : ''}
+      </div>
+      <div class="alert-item-right">
+        <div class="alert-item-amount">${a.amount}</div>
+        <span class="alert-item-days ${a.daysCls}">${a.daysText}</span>
+      </div>
+    </div>
+  `).join('');
+
+  openModal('modalAlert');
+}
+
+function addMonthStr(d,n){
+  const [y,m,day]=d.split('-').map(Number);
+  const t=new Date(y,m-1+n,1); const last=new Date(t.getFullYear(),t.getMonth()+1,0).getDate();
+  const r=new Date(t.getFullYear(),t.getMonth(),Math.min(day,last));
+  return `${r.getFullYear()}-${String(r.getMonth()+1).padStart(2,'0')}-${String(r.getDate()).padStart(2,'0')}`;
+}
+function markOdendi(kreId, idx) {
+  if (!kreId) return;
+  const k = state.kredi.find(x => x.id === kreId); if (!k) return;
+  if (k.dongu) {
+    if (!confirm(`"${k.name}" ödendi olarak işaretlensin mi? Kesim ve son ödeme tarihleri 1 ay ilerler.`)) return;
+    k.kesimTarih = addMonthStr(k.kesimTarih, 1);
+    k.odemeTarih = addMonthStr(k.odemeTarih, 1);
+    if (k.taksit) {
+      if (k.kalan != null) k.kalan = Math.max(0, k.kalan - 1);
+      k.borc = (k.kalan == null || k.kalan > 0) ? k.taksit : 0;
+    } else {
+      k.borc = 0;
+    }
+  } else {
+    if (!confirm('Bu kredi kartı borcunu ödendi olarak işaretleyip listeden kaldıralım mı?')) return;
+    state.kredi = state.kredi.filter(x => x.id !== kreId);
+  }
+  save();
+  renderAll();
+  // Uyarı listesinden kaldır
+  const el = document.getElementById('alertItem_' + idx);
+  if (el) el.style.display = 'none';
+  // Kalan uyarı yoksa modali kapat
+  const remaining = document.querySelectorAll('[id^="alertItem_"]');
+  const visible = Array.from(remaining).filter(e => e.style.display !== 'none');
+  if (!visible.length) closeModal('modalAlert');
+}
+
+// PIN KURULUM
+let setupPinLen = 4;
+let setupPin1   = '';
+
+function openPinSetup() {
+  setupPin1 = '';
+  setupPinLen = 4;
+  document.getElementById('pinInput1').value = '';
+  document.getElementById('pinInput2').value = '';
+  document.getElementById('secAnswer').value = '';
+  document.getElementById('pinLengthSel').value = '4';
+  // Tüm adımları gizle
+  document.querySelectorAll('.lock-setup-step').forEach(s => s.classList.remove('active'));
+  document.getElementById('setupStep1').classList.add('active');
+  openModal('modalPinSetup');
+}
+
+function setupNext(step) {
+  if (step === 1) {
+    setupPinLen = parseInt(document.getElementById('pinLengthSel').value);
+    document.getElementById('pinInput1').maxLength = setupPinLen;
+    document.getElementById('pinInput2').maxLength = setupPinLen;
+    document.getElementById('setupStep1').classList.remove('active');
+    document.getElementById('setupStep2').classList.add('active');
+  } else if (step === 2) {
+    const v = document.getElementById('pinInput1').value.trim();
+    if (v.length < setupPinLen || !/^\d+$/.test(v)) {
+      alert(setupPinLen + ' haneli rakamlardan oluşan PIN girin.'); return;
+    }
+    setupPin1 = v;
+    document.getElementById('setupStep2').classList.remove('active');
+    document.getElementById('setupStep3').classList.add('active');
+  } else if (step === 3) {
+    const v = document.getElementById('pinInput2').value.trim();
+    if (v !== setupPin1) { alert('PIN eşleşmiyor! Tekrar deneyin.'); return; }
+    document.getElementById('setupStep3').classList.remove('active');
+    document.getElementById('setupStep4').classList.add('active');
+  } else if (step === 4) {
+    const ans = document.getElementById('secAnswer').value.trim();
+    if (ans.length < 2) { alert('Lütfen güvenlik sorusunu cevaplayın.'); return; }
+    const q = document.getElementById('secQuestion').value;
+    savePin(setupPin1, setupPinLen, q, ans);
+    document.getElementById('setupStep4').classList.remove('active');
+    document.getElementById('setupStep5').classList.add('active');
+  }
+}
+
+async function savePin(pin, len, question, answer) {
+  const h = await hashPin(pin);
+  const ah = await hashPin(answer.toLowerCase().trim());
+  localStorage.setItem(PIN_KEY, JSON.stringify({ hash: h, len }));
+  localStorage.setItem(SEC_KEY, JSON.stringify({ q: question, ah }));
+  pinLength = len;
+  showLockDots(len);
+}
+
+// SIFIRLAMA
+function showReset() {
+  const sec = localStorage.getItem(SEC_KEY);
+  if (!sec) { alert('Güvenlik sorusu tanımlanmamış.'); return; }
+  const { q } = JSON.parse(sec);
+  const questions = {
+    anne:   'Annenizin kızlık soyadı nedir?',
+    okul:   'İlkokul adınız nedir?',
+    sehir:  'Doğduğunuz şehir?',
+    hayvan: 'İlk evcil hayvanınızın adı?',
+    araba:  'İlk arabanızın markası?'
+  };
+  document.getElementById('resetQuestion').textContent = questions[q] || q;
+  document.getElementById('resetAnswer').value = '';
+  document.getElementById('resetError').textContent = '';
+  openModal('modalReset');
+}
+
+async function checkReset() {
+  const sec = localStorage.getItem(SEC_KEY);
+  if (!sec) return;
+  const { ah } = JSON.parse(sec);
+  const ans = document.getElementById('resetAnswer').value.trim();
+  const h = await hashPin(ans.toLowerCase().trim());
+  if (h === ah) {
+    // Doğru cevap → PIN sil, uygulamayı aç
+    localStorage.removeItem(PIN_KEY);
+    localStorage.removeItem(SEC_KEY);
+    closeModal('modalReset');
+    document.getElementById('lockScreen').classList.remove('visible');
+    unlockApp();
+    setTimeout(() => {
+      alert('PIN sıfırlandı. Yeni PIN oluşturabilirsiniz.');
+      openPinSetup();
+    }, 300);
+  } else {
+    document.getElementById('resetError').textContent = 'Yanlış cevap! Tekrar deneyin.';
+    setTimeout(() => document.getElementById('resetError').textContent = '', 2000);
+  }
+}
+
+// ============================================================
+// SWIPE GEÇİŞ
+// ============================================================
+(function(){
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let touchStartTime = 0;
+  const appEl = document.querySelector('.app');
+
+  appEl.addEventListener('touchstart', function(e){
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    touchStartTime = Date.now();
+  }, {passive: true});
+
+  appEl.addEventListener('touchend', function(e){
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    const dt = Date.now() - touchStartTime;
+
+    // Yatay hareket > dikey hareket, hızlı (400ms), mesafe > 60px
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 60 && dt < 400) {
+      const idx = PAGE_ORDER.indexOf(currentPage);
+      if (dx < 0 && idx < PAGE_ORDER.length - 1) {
+        // Sola çek → sonraki sayfa
+        goPage(PAGE_ORDER[idx + 1], 'right');
+      } else if (dx > 0 && idx > 0) {
+        // Sağa çek → önceki sayfa
+        goPage(PAGE_ORDER[idx - 1], 'left');
+      }
+    }
+  }, {passive: true});
+})();
+
+// ============================================================
+// INIT
+// ============================================================
+initLock();
+</script>
+</body>
+</html>
