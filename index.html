@@ -2317,14 +2317,30 @@ async function buildBackupFile(){
 function _backupMsg(t,ok){ const i=document.getElementById('backupInfo'); if(i){i.textContent=t;i.style.color=ok?'var(--green)':'var(--red)';} }
 async function shareBackup(){
   let r; try{ r=await buildBackupFile(); }catch(e){ _backupMsg('✗ '+e.message,false); return; }
-  try{
-    const file=new File([r.blob],r.name,{type:'application/json'});
-    if(navigator.canShare && navigator.canShare({files:[file]})){
+  if(!navigator.share){ _backupMsg('ℹ️ Bu tarayıcı paylaşmayı desteklemiyor, dosya indirildi.',true); exportBackup(r); return; }
+  // Android Chrome bazı dosya türlerini paylaşmaz; sırayla farklı türleri dene
+  const types=['application/json','text/plain'];
+  for(const t of types){
+    try{
+      const file=new File([r.blob],r.name,{type:t});
+      if(navigator.canShare && !navigator.canShare({files:[file]})) continue;
       await navigator.share({files:[file],title:'Finans Takip Yedeği'});
       markBackup(); _backupMsg(`✓ Yedek paylaşıldı${r.enc?' (şifreli)':''} (${r.count} kontrol kaydı dahil)`,true);
-      renderAll(); return;
+      try{renderAll();}catch(e){}
+      return;
+    }catch(e){
+      if(e&&e.name==='AbortError') return; // kullanıcı vazgeçti
     }
+  }
+  // Dosya paylaşımı olmadı: yedeği metin olarak paylaşmayı dene
+  try{
+    const txt=await r.blob.text();
+    await navigator.share({title:r.name,text:txt});
+    markBackup(); _backupMsg('✓ Yedek metin olarak paylaşıldı. Alıcıda .json dosyası olarak kaydedin.',true);
+    try{renderAll();}catch(e){}
+    return;
   }catch(e){ if(e&&e.name==='AbortError') return; }
+  _backupMsg('ℹ️ Paylaşım açılamadı, dosya indirildi.',true);
   exportBackup(r);
 }
 async function exportBackup(pre){
