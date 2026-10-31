@@ -818,7 +818,7 @@ function togglePrivacy(){
   try{ localStorage.setItem('finans_privacy',privacyOn?'1':'0'); }catch(e){}
   updatePrivacyBtn(); renderAll();
 }
-const APP_VERSION='v11 · 31.10.2026';
+const APP_VERSION='v12 · 31.10.2026';
 function showVersion(){ const e=document.getElementById('appVer'); if(e) e.textContent='Sürüm '+APP_VERSION; const b=document.getElementById('backupVer'); if(b) b.textContent='Sürüm '+APP_VERSION; }
 function updatePrivacyBtn(){ const b=document.getElementById('privBtn'); if(b) b.textContent=privacyOn?'🙈':'👁'; }
 function fmt(n,dec=2){ if(privacyOn) return '₺•••••'; return '₺'+Number(n).toLocaleString('tr-TR',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
@@ -1476,7 +1476,9 @@ function renewMevduat(){
   const np=parseFloat((m.principal+c.netTot).toFixed(2));
   const ns=m.endDate;
   const ne=new Date(ns); ne.setDate(ne.getDate()+m.tenor);
-  if(confirm(`${fmt(np)} anaparayla yenilensin mi?`)){
+  if(confirm(`Bu dönemin net kazancı ${fmt(c.netTot)} geçmişe kaydedilecek ve ${fmt(np)} anaparayla aynı faiz/vadeyle yenilenecek. Onaylıyor musunuz?`)){
+    state.mevduatGecmis=state.mevduatGecmis||[];
+    state.mevduatGecmis.push({id:uid(),personId:m.personId,name:m.name,bank:m.bank,principal:m.principal,rate:m.rate,tax:m.tax??15,tenor:m.tenor,startDate:m.startDate,endDate:m.endDate,accrualEnd:m.endDate,closedDate:m.endDate,netKazanc:parseFloat(c.netTot.toFixed(2)),yenileme:true});
     const idx=state.mevduat.findIndex(x=>x.id===detailMevduatId);
     state.mevduat[idx]={...m,principal:np,startDate:ns,endDate:ne.toISOString().split('T')[0]};
     closeModal('modalMevduatDetail'); renderAll(); save();
