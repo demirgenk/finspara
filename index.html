@@ -281,7 +281,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .kredi-sum-name{font-size:14px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
 .kredi-sum-meta{font-size:12px;color:var(--text2);margin-top:2px;}
 .kredi-sum-right{text-align:right;flex-shrink:0;}
-.kredi-sum-borc{font-size:17px;font-weight:700;color:var(--red-light);}
+.kredi-sum-borc{font-size:17px;font-weight:700;color:var(--red);}
+@media(prefers-color-scheme:dark){.kredi-sum-borc{color:var(--red-light);}}
 .kredi-sum-odeme{font-size:12px;font-weight:600;margin-top:2px;}
 .kredi-summary,.mev-summary,.asset-summary{min-height:72px;}
 .mev-sum-anapara{font-size:17px;}
@@ -311,6 +312,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .mev-badge{display:inline-block;margin-left:4px;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;white-space:nowrap;vertical-align:middle;}
 .mev-badge.b-active{background:var(--green-bg);color:var(--green);}
 .mev-badge.b-soon{background:#f5d000;color:#2b2200;}
+.mev-badge.b-solid{background:var(--green);color:#fff;}
 .mev-summary.s-soon .mev-sum-meta,.mev-summary.s-soon .mev-sum-vade{color:var(--yellow-t);}
 .mev-badge.b-urgent,.mev-badge.b-expired{background:var(--red);color:#fff;font-size:12px;}
 .mev-sum-progress{display:none;}
@@ -860,7 +862,7 @@ function togglePrivacy(){
   try{ localStorage.setItem('finans_privacy',privacyOn?'1':'0'); }catch(e){}
   updatePrivacyBtn(); renderAll();
 }
-const APP_VERSION='v22 · 31.10.2026';
+const APP_VERSION='v25 · 31.10.2026';
 function showVersion(){ const e=document.getElementById('appVer'); if(e) e.textContent='Sürüm '+APP_VERSION; const b=document.getElementById('backupVer'); if(b) b.textContent='Sürüm '+APP_VERSION; }
 function updatePrivacyBtn(){ const b=document.getElementById('privBtn'); if(b) b.textContent=privacyOn?'🙈':'👁'; }
 function fmt(n,dec=2){ if(privacyOn) return '₺•••••'; return '₺'+Number(n).toLocaleString('tr-TR',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
@@ -1299,19 +1301,20 @@ function renderKredi(){
       const tagTxt=dlOdeme<=0?'Bugün son gün!':dlOdeme+' gün kaldı';
       const odemeRenk = dlOdeme<=1?'var(--red-light)':dlOdeme<=3?'var(--yellow)':'var(--green)';
       const odemeFontSize = dlOdeme<=1?'15px':'13px';
-      const kesimBadge = kesimGecti
-        ? `<span class="tag g" style="font-size:12px;">✓ Kesim geçti</span>`
-        : `<span class="tag g" style="font-size:12px;">Kesim: ${dlKesim} gün</span>`;
+      const kBadgeCls = dlOdeme<=1?'b-urgent':dlOdeme<=3?'b-soon':'b-solid';
+      const kBadgeTxt = dlOdeme<0?`⚠️ ${Math.abs(dlOdeme)} gün geçti`:dlOdeme===0?'⏰ Bugün son gün!':dlOdeme<=3?`⏰ ${dlOdeme} gün kaldı`:`${dlOdeme} gün kaldı`;
+      const kesimBadge = `<span class="mev-badge ${kBadgeCls}">${kBadgeTxt}</span>`;
+      const kesimMeta = kesimGecti ? '<span style="color:var(--green);font-weight:600;">✓ Kesim geçti</span>' : `Kesim: ${dlKesim} gün`;
       const gunlukBorc = (k.borc||0) / 30;
       const out=`<div class="kredi-card" id="kcard_${k.id}">
         <div class="kredi-summary ${cardBorder}" onclick="toggleKrediCard('${k.id}')">
           <div class="kredi-sum-left">
             <div class="kredi-sum-name">💳 ${k.name} ${kesimBadge}</div>
-            <div class="kredi-sum-meta">${personName(k.personId)} · Son ödeme: ${new Date(k.odemeTarih).toLocaleDateString('tr-TR',{day:'2-digit',month:'short'})}</div>
+            <div class="kredi-sum-meta">${personName(k.personId)} · ${kesimMeta}${k.dongu?' · 🔁':''}</div>
           </div>
           <div class="kredi-sum-right">
             <div class="kredi-sum-borc">${fmt(k.borc||0)}</div>
-            <div class="kredi-sum-odeme" style="color:${odemeRenk};font-size:${odemeFontSize};">${tagTxt}</div>
+            <div class="kredi-sum-odeme" style="color:var(--text2);">Son ödeme: ${new Date(k.odemeTarih).toLocaleDateString('tr-TR',{day:'2-digit',month:'short'})}</div>
           </div>
           <div class="kredi-chevron">▼</div>
         </div>
@@ -1334,6 +1337,12 @@ function renderKredi(){
       </div>`;
       return out;
     };
+    const yakin=list.filter(k=>daysLeft(k.odemeTarih)<=7).sort((a,b)=>daysLeft(a.odemeTarih)-daysLeft(b.odemeTarih));
+    if(yakin.length){
+      const red=yakin.some(k=>daysLeft(k.odemeTarih)<=1);
+      html+=`<div class="mev-alert ${red?'':'soon'}"><div class="mev-alert-t">${red?'⏰':'📅'} ${yakin.length} kartın son ödeme günü yaklaşıyor</div>`+
+        yakin.map(k=>{ const dl=daysLeft(k.odemeTarih); return `<div class="mev-alert-i">• <b>${k.name}</b> — ${dl<0?Math.abs(dl)+' gün geçti':dl===0?'bugün son gün':dl+' gün kaldı'} · ${fmt(k.borc||0)}</div>`; }).join('')+`</div>`;
+    }
     const kesilen=list.filter(k=>daysLeft(k.kesimTarih)<0).sort((a,b)=>daysLeft(a.odemeTarih)-daysLeft(b.odemeTarih));
     const bekleyen=list.filter(k=>daysLeft(k.kesimTarih)>=0).sort((a,b)=>daysLeft(a.kesimTarih)-daysLeft(b.kesimTarih)||daysLeft(a.odemeTarih)-daysLeft(b.odemeTarih));
     const secBaslik=(t)=>`<div style="font-size:13px;font-weight:700;color:var(--text2);margin:6px 2px 8px;">${t}</div>`;
