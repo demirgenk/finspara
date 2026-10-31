@@ -740,6 +740,7 @@ let state = {
   nakit: [],        // [{id,personId,birikim,faizYillik,vergi,cuzdan}]
   kredi: [],        // [{id,personId,name,borc,kesimTarih,odemeTarih}]
   mevduat: [],      // [{id,personId,name,bank,principal,rate,tax,tenor,startDate,endDate}]
+  log: [],          // [{t,kind,personId,name,amount}] olay günlüğü (ödenen kartlar vb.)
   doviz: [],        // [{id,personId,type,amount,alis,satis}]
   altin: [],        // [{id,personId,type,amount,alis,satis}]
 };
@@ -757,6 +758,7 @@ function load() {
   // clean expired kredi cards
   const today = new Date(); today.setHours(0,0,0,0);
   state.kredi = state.kredi.filter(k => {
+    if (k.dongu) return true; // her ay yenilenen kartlar silinmez
     const od = new Date(k.odemeTarih); od.setHours(0,0,0,0);
     return od >= today;
   });
@@ -783,7 +785,7 @@ function togglePrivacy(){
   try{ localStorage.setItem('finans_privacy',privacyOn?'1':'0'); }catch(e){}
   updatePrivacyBtn(); renderAll();
 }
-const APP_VERSION='v9 · 31.10.2026';
+const APP_VERSION='v10 · 31.10.2026';
 function showVersion(){ const e=document.getElementById('appVer'); if(e) e.textContent='Sürüm '+APP_VERSION; const b=document.getElementById('backupVer'); if(b) b.textContent='Sürüm '+APP_VERSION; }
 function updatePrivacyBtn(){ const b=document.getElementById('privBtn'); if(b) b.textContent=privacyOn?'🙈':'👁'; }
 function fmt(n,dec=2){ if(privacyOn) return '₺•••••'; return '₺'+Number(n).toLocaleString('tr-TR',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
@@ -917,7 +919,7 @@ function renderOverview(){
     ? `Nakit ${fmt(totalNakit)} — Borç ${fmt(totalBorc)}`
     : 'Mevduat + Net Nakit + Döviz + Altın';
 
-  page.innerHTML=backupBannerHtml()+`
+  page.innerHTML=ozetBannerHtml()+backupBannerHtml()+`
     <div class="summary-hero">
       <div class="hero-label">${heroLabel}</div>
       <div class="hero-val" style="color:${isNetPara&&heroVal<0?'#ffaaaa':'#fff'}">${fmt(heroVal)}</div>
@@ -2154,6 +2156,97 @@ function getSnapshotForDate(daysAgo) {
   return best;
 }
 
+// ============================================================
+// AYLIK ÖZET
+// ============================================================
+let ozetOffset = -1; // -1: geçen ay, 0: bu ay
+function logEvent(kind,data){
+  state.log = state.log || [];
+  state.log.push({t:new Date().toISOString(),kind,...data});
+  if(state.log.length>600) state.log = state.log.slice(-600);
+}
+function _ovl(a0,a1,b0,b1){ return Math.max(0,(Math.min(a1,b1)-Math.max(a0,b0))/86400000); }
+function _ym(y,m){ return `${y}-${String(m+1).padStart(2,'0')}-01`; }
+function ozetData(off){
+  const now=new Date();
+  const s=new Date(now.getFullYear(),now.getMonth()+off,1);
+  const e=new Date(now.getFullYear(),now.getMonth()+off+1,1);
+  const S=s.getTime(), END=Math.min(e.getTime(),now.getTime());
+  let mev=0, nak=0;
+  filterByPerson(state.mevduat).forEach(m=>{
+    const st=new Date(m.startDate).getTime(), en=st+m.tenor*86400000;
+    mev+=m.principal*(m.rate/100)/365*_ovl(st,en,S,END)*(1-(m.tax??15)/100);
+  });
+  filterByPerson(state.nakit).forEach(n=>{
+    const dd=Math.max(0,(END-S)/86400000);
+    nak+=(n.birikim||0)*((n.faizYillik||0)/100)/365*dd*(1-(n.vergi??15)/100);
+  });
+  const pays=(state.log||[]).filter(l=>l.kind==='kredi-odendi' && new Date(l.t)>=s && new Date(l.t)<e && (selectedPerson==='all'||l.personId===selectedPerson));
+  const payTotal=pays.reduce((a,l)=>a+(l.amount||0),0);
+  let from=null,to=null;
+  if(selectedPerson==='all'){
+    const snaps=getSnapshots();
+    const sStr=_ym(s.getFullYear(),s.getMonth()), eStr=_ym(e.getFullYear(),e.getMonth());
+    const before=snaps.filter(x=>x.date<sStr), inM=snaps.filter(x=>x.date>=sStr&&x.date<eStr);
+    from=before.length?before[before.length-1]:(inM[0]||null);
+    to=off===0?buildSnapshot():(inM.length?inM[inM.length-1]:null);
+    if(from&&to&&from.date===to.date) from=null;
+  }
+  return {s,mev,nak,faiz:mev+nak,payCount:pays.length,payTotal,from,to};
+}
+function ozetMonthName(off){
+  const n=new Date(); return new Date(n.getFullYear(),n.getMonth()+off,1).toLocaleDateString('tr-TR',{month:'long',year:'numeric'});
+}
+function setOzet(off){ ozetOffset=off; renderKontrol(); }
+function ozetHtml(){
+  const o=ozetData(ozetOffset);
+  const row=(k,v,extra='')=>`<div class="acc-row"><span class="key">${k}</span><span class="v" ${extra}>${v}</span></div>`;
+  const delta=(a,b)=>{ const df=a-b; const c=df>0?'var(--green)':df<0?'var(--red-light)':'var(--text2)'; const ar=df>0?'▲':df<0?'▼':'–'; return `<span style="color:${c};font-weight:700;">${ar} ${fmt(Math.abs(df))}</span>`; };
+  let h=`<div class="ctrl-section" style="margin-bottom:12px;">
+    <div class="ctrl-section-title">📅 Aylık Özet</div>
+    <div style="display:flex;gap:8px;margin-bottom:8px;">
+      <button class="ctrl-tab ${ozetOffset===-1?'active':''}" style="flex:1" onclick="setOzet(-1)">Geçen Ay</button>
+      <button class="ctrl-tab ${ozetOffset===0?'active':''}" style="flex:1" onclick="setOzet(0)">Bu Ay</button>
+    </div>
+    <div style="font-size:13px;font-weight:700;margin-bottom:4px;text-transform:capitalize;">${ozetMonthName(ozetOffset)}</div>
+    ${row('Mevduat net faiz kazancı',fmt(o.mev),'style="color:var(--green);"')}
+    ${row('Birikim faizi (tahmini)',fmt(o.nak),'style="color:var(--green);"')}
+    ${row('<b>Toplam faiz geliri</b>',`<b>${fmt(o.faiz)}</b>`,'style="color:var(--green);"')}
+    ${row('Kredi kartı ödemeleri',o.payCount?`${fmt(o.payTotal)} (${o.payCount} ödeme)`:'Kayıt yok')}`;
+  if(selectedPerson!=='all'){
+    h+=`<div style="font-size:11px;color:var(--text2);margin-top:6px;">Varlık değişimi yalnızca "Tümü" görünümünde gösterilir.</div>`;
+  } else if(o.from&&o.to){
+    const fd=new Date(o.from.date).toLocaleDateString('tr-TR',{day:'2-digit',month:'short'});
+    const td=ozetOffset===0?'Bugün':new Date(o.to.date).toLocaleDateString('tr-TR',{day:'2-digit',month:'short'});
+    h+=`<div style="font-size:12px;color:var(--text2);margin:8px 0 2px;">Varlık değişimi (${fd} → ${td})</div>
+      ${row('Toplam anapara',delta(o.to.toplamAnapara,o.from.toplamAnapara))}
+      ${row('Net para',delta(o.to.netPara,o.from.netPara))}
+      ${row('Döviz (TL)',delta(o.to.dovizTL,o.from.dovizTL))}
+      ${row('Altın (TL)',delta(o.to.altinTL,o.from.altinTL))}
+      ${row('Kart borcu',delta(o.to.kreBorc,o.from.kreBorc))}`;
+  } else {
+    h+=`<div style="font-size:11px;color:var(--text2);margin-top:6px;">Varlık değişimi için bu ayda yeterli günlük kayıt yok. Uygulamayı açtıkça kayıtlar kendiliğinden birikir.</div>`;
+  }
+  h+=`<div style="font-size:11px;color:var(--text2);margin-top:6px;">Faiz tutarları mevcut hesap bilgilerinden hesaplanır. Kart ödemeleri "Ödendi" düğmesine bastığınız andan itibaren kaydedilir.</div></div>`;
+  return h;
+}
+function ozetBannerHtml(){
+  const ym=new Date().toISOString().slice(0,7);
+  let seen=''; try{ seen=localStorage.getItem('finans_ozet_seen')||''; }catch(e){}
+  if(seen===ym) return '';
+  const o=ozetData(-1);
+  if(!(o.faiz>0||o.payCount||o.from)) return '';
+  return `<div style="background:var(--blue-bg);border:1.5px solid var(--blue);border-radius:12px;padding:12px;margin-bottom:12px;">
+    <div style="font-size:14px;font-weight:700;color:var(--blue);margin-bottom:4px;text-transform:capitalize;">📅 ${ozetMonthName(-1)} özeti hazır</div>
+    <div style="font-size:13px;color:var(--text);margin-bottom:8px;">Geçen ay toplam faiz geliriniz ${fmt(o.faiz)}.</div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn-backup export" style="flex:2;padding:10px;" onclick="openOzet()">Özeti Gör</button>
+      <button class="btn-backup import" style="flex:1;padding:10px;" onclick="dismissOzet()">Kapat</button>
+    </div></div>`;
+}
+function dismissOzet(){ try{ localStorage.setItem('finans_ozet_seen',new Date().toISOString().slice(0,7)); }catch(e){} renderAll(); }
+function openOzet(){ ozetOffset=-1; dismissOzet(); goPage('kontrol'); }
+
 function renderKontrol() {
   const page = document.getElementById('pageKontrol');
   const snaps = getSnapshots();
@@ -2162,7 +2255,7 @@ function renderKontrol() {
   const lastSaved = snaps.length ? snaps[snaps.length-1].date : null;
   const lastSavedFmt = lastSaved ? new Date(lastSaved).toLocaleDateString('tr-TR', {day:'2-digit',month:'short',year:'numeric'}) : 'Henüz kaydedilmedi';
 
-  let html = `
+  let html = ozetHtml() + `
     <button class="ctrl-save-btn" onclick="manualSnapshot()">
       📸 Bugünün Değerlerini Kaydet
     </button>
@@ -2683,6 +2776,7 @@ function addMonthStr(d,n){
 function markOdendi(kreId, idx) {
   if (!kreId) return;
   const k = state.kredi.find(x => x.id === kreId); if (!k) return;
+  const _logAmt = k.borc||0;
   if (k.dongu) {
     if (!confirm(`"${k.name}" ödendi olarak işaretlensin mi? Kesim ve son ödeme tarihleri 1 ay ilerler.`)) return;
     k.kesimTarih = addMonthStr(k.kesimTarih, 1);
@@ -2697,6 +2791,7 @@ function markOdendi(kreId, idx) {
     if (!confirm('Bu kredi kartı borcunu ödendi olarak işaretleyip listeden kaldıralım mı?')) return;
     state.kredi = state.kredi.filter(x => x.id !== kreId);
   }
+  logEvent('kredi-odendi',{personId:k.personId,name:k.name,amount:_logAmt});
   save();
   renderAll();
   // Uyarı listesinden kaldır
