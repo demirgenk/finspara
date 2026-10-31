@@ -843,7 +843,7 @@ function togglePrivacy(){
   try{ localStorage.setItem('finans_privacy',privacyOn?'1':'0'); }catch(e){}
   updatePrivacyBtn(); renderAll();
 }
-const APP_VERSION='v17 · 31.10.2026';
+const APP_VERSION='v18 · 31.10.2026';
 function showVersion(){ const e=document.getElementById('appVer'); if(e) e.textContent='Sürüm '+APP_VERSION; const b=document.getElementById('backupVer'); if(b) b.textContent='Sürüm '+APP_VERSION; }
 function updatePrivacyBtn(){ const b=document.getElementById('privBtn'); if(b) b.textContent=privacyOn?'🙈':'👁'; }
 function fmt(n,dec=2){ if(privacyOn) return '₺•••••'; return '₺'+Number(n).toLocaleString('tr-TR',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
@@ -1244,12 +1244,12 @@ function renderKredi(){
     // Kesim tarihi geçmiş kartların borç toplamı
     let kesimGecenBorc = 0;
     list.forEach(k=>{ if(daysLeft(k.kesimTarih)<0) kesimGecenBorc+=k.borc||0; });
-    html+=`<div class="grid3" style="margin-bottom:10px;">
+    const gridHtml=`<div class="grid3" style="margin-bottom:10px;">
       <div class="mini-card"><div class="lbl">Toplam Borç</div><div class="val" style="color:var(--red);">${fmt(totalBorc)}</div></div>
       <div class="mini-card"><div class="lbl">Kesilen Borç</div><div class="val" style="color:var(--yellow-t);">${fmt(kesimGecenBorc)}</div><div class="sub">Ödeme bekliyor</div></div>
       <div class="mini-card"><div class="lbl">Günlük Borç</div><div class="val amber">${fmt(gunlukBorc)}</div><div class="sub">Aylık ort.</div></div>
     </div>`;
-    list.forEach(k=>{
+    const krediCardHtml=(k)=>{
       const dlOdeme=daysLeft(k.odemeTarih);
       const dlKesim=daysLeft(k.kesimTarih);
       const kesimGecti = dlKesim < 0;
@@ -1261,7 +1261,7 @@ function renderKredi(){
         ? `<span class="tag g" style="font-size:12px;">✓ Kesim geçti</span>`
         : `<span class="tag g" style="font-size:12px;">Kesim: ${dlKesim} gün</span>`;
       const gunlukBorc = (k.borc||0) / 30;
-      html+=`<div class="kredi-card" id="kcard_${k.id}">
+      const out=`<div class="kredi-card" id="kcard_${k.id}">
         <div class="kredi-summary ${cardBorder}" onclick="toggleKrediCard('${k.id}')">
           <div class="kredi-sum-left">
             <div class="kredi-sum-name">💳 ${k.name} ${kesimBadge}</div>
@@ -1290,7 +1290,14 @@ function renderKredi(){
           </div>
         </div>
       </div>`;
-    });
+      return out;
+    };
+    const kesilen=list.filter(k=>daysLeft(k.kesimTarih)<0).sort((a,b)=>daysLeft(a.odemeTarih)-daysLeft(b.odemeTarih));
+    const bekleyen=list.filter(k=>daysLeft(k.kesimTarih)>=0).sort((a,b)=>daysLeft(a.kesimTarih)-daysLeft(b.kesimTarih)||daysLeft(a.odemeTarih)-daysLeft(b.odemeTarih));
+    const secBaslik=(t)=>`<div style="font-size:13px;font-weight:700;color:var(--text2);margin:6px 2px 8px;">${t}</div>`;
+    if(kesilen.length) html+=secBaslik('✓ Hesap kesimi geçenler · ödeme bekliyor')+kesilen.map(krediCardHtml).join('');
+    html+=gridHtml;
+    if(bekleyen.length) html+=secBaslik('⏳ Hesap kesimi beklenenler')+bekleyen.map(krediCardHtml).join('');
   } else {
     html+=`<div class="empty-state"><div class="ei">💳</div><p>Kredi kartı borcu yok.<br>Eklemek için butona tıklayın.</p></div>`;
   }
