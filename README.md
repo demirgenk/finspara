@@ -1,3 +1,4 @@
+[README.md](https://github.com/user-attachments/files/34227306/README.md)
 # Finans Takip
 
 Telefondan kullanılan, tek sayfalık kişisel finans takip uygulaması. Mevduat, kredi kartı, nakit, döviz ve altın varlıklarını tek yerde izler. Sunucu, hesap veya üyelik gerektirmez; tüm veriler yalnızca kullanıcının kendi telefonunda saklanır.
