@@ -320,6 +320,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .kc-root{--s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--s4:#eda100;--s6:#008300;--s7:#6250d6;--s8:#e34948;}
 @media(prefers-color-scheme:dark){:root:where(:not([data-theme="light"])) .kc-root{--s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s6:#008300;--s7:#9085e9;--s8:#e66767;}}
 .kc-chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:8px;-webkit-overflow-scrolling:touch;}
+.kc-navbar{display:flex;background:var(--card);border-radius:var(--radius);padding:6px 2px;margin-bottom:8px;box-shadow:var(--shadow);}
+.kc-nav{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:var(--text2);cursor:pointer;padding:4px 0;border:none;background:none;font-family:inherit;white-space:nowrap;}
+.kc-nav .ic{font-size:19px;display:flex;align-items:center;justify-content:center;width:36px;height:26px;border-radius:13px;opacity:.6;filter:grayscale(.45);transition:all .2s;}
+.kc-nav.on{color:var(--text);font-weight:700;}
+.kc-nav.on .ic{opacity:1;filter:none;transform:scale(1.08);background:color-mix(in srgb,var(--c) 28%,transparent);}
 .kc-chip{flex:0 0 auto;padding:7px 12px;border-radius:18px;border:1.5px solid var(--border);background:var(--card);color:var(--text2);font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;}
 .kc-chip.on{border-color:var(--text);color:var(--text);}
 .kc-card{background:var(--card);border-radius:var(--radius);padding:14px 12px 10px;box-shadow:var(--shadow);}
@@ -423,6 +428,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .upcoming-days.d3{color:var(--amber);}
 .upcoming-days.d7{color:var(--text2);}
 .upcoming-amount{font-size:12px;color:var(--text2);margin-top:1px;font-weight:600;}
+.up-item{display:flex;align-items:center;gap:10px;padding:13px 14px;margin-bottom:10px;background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);min-height:72px;}
+.up-item.sev-red{border-color:var(--red);background:var(--red-bg);}
+.up-item.sev-yellow{border-color:var(--yellow-border);background:var(--yellow-bg);}
+.up-item.sev-green{border-color:var(--green);}
+.up-item.sev-info{border-color:var(--border);}
+.up-item.sev-yellow .upcoming-sub{color:var(--yellow-t);}
+.up-item .upcoming-name{white-space:normal;overflow:visible;}
+.upcoming-amount-big{font-size:16px;font-weight:700;color:var(--text);}
+.upcoming-right .mev-badge{margin-top:3px;}
 .upcoming-empty{text-align:center;padding:1.5rem;color:var(--text3);font-size:13px;}
 
 /* BACKUP BUTTONS */
@@ -883,7 +897,7 @@ function togglePrivacy(){
   try{ localStorage.setItem('finans_privacy',privacyOn?'1':'0'); }catch(e){}
   updatePrivacyBtn(); renderAll();
 }
-const APP_VERSION='v27 · 31.10.2026';
+const APP_VERSION='v28 · 31.10.2026';
 function showVersion(){ const e=document.getElementById('appVer'); if(e) e.textContent='Sürüm '+APP_VERSION; const b=document.getElementById('backupVer'); if(b) b.textContent='Sürüm '+APP_VERSION; }
 function updatePrivacyBtn(){ const b=document.getElementById('privBtn'); if(b) b.textContent=privacyOn?'🙈':'👁'; }
 function fmt(n,dec=2){ if(privacyOn) return '₺•••••'; return '₺'+Number(n).toLocaleString('tr-TR',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
@@ -1110,10 +1124,8 @@ function renderOverview(){
     </div>
   `;
   const upcomingHtml=`
-    <div class="upcoming-card">
-      <div class="section-title" style="margin:0 0 8px;">📅 Yaklaşan İşlemler (7 Gün)</div>
-      ${renderUpcoming(mList, kList)}
-    </div>`;
+    <div class="section-title" style="margin:2px 2px 10px;">📅 Yaklaşan İşlemler (7 Gün)</div>
+    ${renderUpcoming(mList, kList)}`;
   let body;
   if(ovView==='toplam') body=totalsHtml;
   else if(ovView==='kisi') body=state.persons.length ? renderPersonSummaries(state.mevduat,state.nakit,state.kredi,state.doviz,state.altin) : `<div class="empty-state"><div class="ei">👥</div><p>Henüz kişi eklenmedi.<br>Yukarıdaki "+ Kişi" düğmesiyle ekleyin.</p></div>`;
@@ -1128,19 +1140,21 @@ function renderUpcoming(mList, kList) {
   // MEVDUAT - vade tarihi 7 gün içinde olanlar
   mList.forEach(m => {
     const dl = daysLeft(m.endDate);
-    if (dl >= 0 && dl <= 7) {
+    if (dl <= 7) {
       const c = calcMevduat(m);
       items.push({
         type: 'mevduat',
         icon: '🏦',
         iconCls: 'mev',
-        name: m.name,
+        name: m.name + ' — Vade',
         sub: `${personName(m.personId)} · ${m.bank}`,
+        sev: dl <= 5 ? 'red' : 'yellow',
+        raw: m.principal + c.netTot,
         tarih: m.endDate,
         dl,
-        amount: fmt(c.netTot),
-        amountLabel: 'Net kazanç',
-        extra: `Anapara: ${fmt(m.principal)}`
+        amount: fmt(m.principal + c.netTot),
+        amountLabel: 'Vade sonu',
+        extra: `Net kazanç: ${fmt(c.netTot)}`
       });
     }
   });
@@ -1149,7 +1163,7 @@ function renderUpcoming(mList, kList) {
   kList.forEach(k => {
     const dlOdeme = daysLeft(k.odemeTarih);
     const dlKesim = daysLeft(k.kesimTarih);
-    if (dlOdeme >= 0 && dlOdeme <= 7) {
+    if (dlOdeme <= 7) {
       items.push({
         type: 'kredi-odeme',
         icon: '💳',
@@ -1158,6 +1172,8 @@ function renderUpcoming(mList, kList) {
         sub: `${personName(k.personId)}`,
         tarih: k.odemeTarih,
         dl: dlOdeme,
+        sev: dlOdeme <= 1 ? 'red' : dlOdeme <= 3 ? 'yellow' : 'green',
+        raw: k.borc || 0,
         amount: fmt(k.borc),
         amountLabel: 'Borç',
         extra: ''
@@ -1173,6 +1189,7 @@ function renderUpcoming(mList, kList) {
         sub: `${personName(k.personId)}`,
         tarih: k.kesimTarih,
         dl: dlKesim,
+        sev: 'info',
         amount: fmt(k.borc),
         amountLabel: 'Mevcut borç',
         extra: ''
@@ -1187,11 +1204,18 @@ function renderUpcoming(mList, kList) {
     return `<div class="upcoming-empty">🎉 Önümüzdeki 7 günde bekleyen işlem yok</div>`;
   }
 
-  return items.map(it => {
-    const daysCls = it.dl === 0 ? 'd0' : it.dl <= 1 ? 'd1' : it.dl <= 3 ? 'd3' : 'd7';
-    const daysText = it.dl === 0 ? 'BUGÜN!' : it.dl === 1 ? 'Yarın' : `${it.dl} gün`;
+  const odenecek = items.filter(i=>i.type==='kredi-odeme').reduce((a,i)=>a+i.raw,0);
+  const vade = items.filter(i=>i.type==='mevduat').reduce((a,i)=>a+i.raw,0);
+  const summary = `<div class="grid2" style="margin-bottom:10px;">
+    <div class="mini-card"><div class="lbl">Ödenecek (kart)</div><div class="val" style="color:var(--red);">${fmt(odenecek)}</div><div class="sub">${items.filter(i=>i.type==='kredi-odeme').length} son ödeme</div></div>
+    <div class="mini-card"><div class="lbl">Vadesi gelen mevduat</div><div class="val" style="color:var(--yellow-t);">${fmt(vade)}</div><div class="sub">${items.filter(i=>i.type==='mevduat').length} hesap · vade sonu</div></div>
+  </div>`;
+  const cards = items.map(it => {
+    const dl = it.dl;
+    const daysText = dl < 0 ? `⚠️ ${Math.abs(dl)} gün geçti` : dl === 0 ? '⏰ BUGÜN!' : dl === 1 ? '⏰ Yarın' : (it.sev==='red'||it.sev==='yellow') ? `⏰ ${dl} gün` : `${dl} gün`;
+    const bCls = it.sev==='red' ? 'b-urgent' : it.sev==='yellow' ? 'b-soon' : it.sev==='green' ? 'b-solid' : 'b-active';
     const tarihFmt = new Date(it.tarih).toLocaleDateString('tr-TR', {day:'2-digit', month:'short'});
-    return `<div class="upcoming-item">
+    return `<div class="up-item sev-${it.sev}">
       <div class="upcoming-icon ${it.iconCls}">${it.icon}</div>
       <div class="upcoming-body">
         <div class="upcoming-name">${it.name}</div>
@@ -1199,11 +1223,12 @@ function renderUpcoming(mList, kList) {
         ${it.extra ? `<div class="upcoming-sub">${it.extra}</div>` : ''}
       </div>
       <div class="upcoming-right">
-        <div class="upcoming-days ${daysCls}">${daysText}</div>
-        <div class="upcoming-amount">${it.amountLabel}: ${it.amount}</div>
+        <div class="upcoming-amount-big">${it.amount}</div>
+        <div class="mev-badge b-badge ${bCls}" style="margin-left:0;">${daysText}</div>
       </div>
     </div>`;
   }).join('');
+  return summary + cards;
 }
 
 function renderPersonSummaries(mList,nList,kList,dList,aList){
@@ -2497,13 +2522,13 @@ function openOzet(){ ozetOffset=-1; kView='ozet'; dismissOzet(); goPage('kontrol
 let kView='karsilastirma'; // 'karsilastirma' | 'ozet' | 'grafik'
 // ---------------- GRAFİK ----------------
 const KC_METRICS=[
-  {k:'toplamAnapara',l:'Toplam Anapara',c:1,f:s=>s.toplamAnapara,bad:false},
-  {k:'netPara',l:'Net Para',c:3,f:s=>s.netPara,bad:false},
-  {k:'mevAnapara',l:'Mevduat',c:7,f:s=>s.mevAnapara,bad:false},
-  {k:'nakit',l:'Nakit',c:6,f:s=>(s.birikim||0)+(s.cuzdan||0),bad:false},
-  {k:'dovizTL',l:'Döviz',c:2,f:s=>s.dovizTL,bad:false},
-  {k:'altinTL',l:'Altın',c:4,f:s=>s.altinTL,bad:false},
-  {k:'kreBorc',l:'Kart Borcu',c:8,f:s=>s.kreBorc,bad:true}
+  {k:'toplamAnapara',l:'Toplam Anapara',sh:'Toplam',ic:'📊',c:1,f:s=>s.toplamAnapara,bad:false},
+  {k:'netPara',l:'Net Para',sh:'Net Para',ic:'🧮',c:3,f:s=>s.netPara,bad:false},
+  {k:'kreBorc',l:'Kredi Borcu',sh:'Kredi',ic:'💳',c:8,f:s=>s.kreBorc,bad:true},
+  {k:'mevAnapara',l:'Mevduat',sh:'Mevduat',ic:'🏦',c:7,f:s=>s.mevAnapara,bad:false},
+  {k:'nakit',l:'Nakit',sh:'Nakit',ic:'💵',c:6,f:s=>(s.birikim||0)+(s.cuzdan||0),bad:false},
+  {k:'dovizTL',l:'Döviz',sh:'Döviz',ic:'💱',c:2,f:s=>s.dovizTL,bad:false},
+  {k:'altinTL',l:'Altın',sh:'Altın',ic:'🥇',c:4,f:s=>s.altinTL,bad:false}
 ];
 let kcMetric='toplamAnapara', kcRange=90, kcTable=false, kcIdx=null;
 function kcSetMetric(m){ kcMetric=m; kcIdx=null; renderKontrol(); }
@@ -2536,10 +2561,10 @@ function kcDelta(m,diff,base){
 }
 function kChartHtml(){
   const m=KC_METRICS.find(x=>x.k===kcMetric)||KC_METRICS[0];
-  const chip=(x)=>`<button class="kc-chip ${x.k===m.k?'on':''}" onclick="kcSetMetric('${x.k}')">${x.l}</button>`;
+  const chip=(x)=>`<button class="kc-nav ${x.k===m.k?'on':''}" style="--c:var(--s${x.c});" onclick="kcSetMetric('${x.k}')"><span class="ic">${x.ic}</span>${x.sh}</button>`;
   const rng=(r,l)=>`<button class="ctrl-tab ${kcRange===r?'active':''}" style="padding:7px 4px;font-size:12px;" onclick="kcSetRange(${r})">${l}</button>`;
   let h=`<div class="kc-root">
-    <div class="kc-chips">${KC_METRICS.map(chip).join('')}</div>
+    <div class="kc-navbar">${KC_METRICS.map(chip).join('')}</div>
     <div class="kc-row">${rng(30,'30 Gün')}${rng(90,'90 Gün')}${rng(365,'1 Yıl')}${rng(0,'Tümü')}</div>`;
   const pts=kcPoints();
   if(pts.length<2){
