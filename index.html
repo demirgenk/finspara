@@ -317,12 +317,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .mev-badge.b-urgent,.mev-badge.b-expired{background:var(--red);color:#fff;font-size:12px;}
 .mev-sum-progress{display:none;}
 .mev-sum-progress div{height:100%;background:var(--st);opacity:.85;}
-.kc-root{--s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--s4:#eda100;--s6:#008300;--s7:#6250d6;--s8:#e34948;}
-@media(prefers-color-scheme:dark){:root:where(:not([data-theme="light"])) .kc-root{--s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s6:#008300;--s7:#9085e9;--s8:#e66767;}}
+.kc-root,.pc{--s1:#2a78d6;--s5:#e87ba4;--s2:#eb6834;--s3:#1baf7a;--s4:#eda100;--s6:#008300;--s7:#6250d6;--s8:#e34948;}
+@media(prefers-color-scheme:dark){:root:where(:not([data-theme="light"])) .kc-root,:root:where(:not([data-theme="light"])) .pc{--s1:#3987e5;--s5:#d55181;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s6:#008300;--s7:#9085e9;--s8:#e66767;}}
 .kc-chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:8px;-webkit-overflow-scrolling:touch;}
 .kc-navbar{display:flex;background:var(--card);border-radius:var(--radius);padding:6px 2px;margin-bottom:8px;box-shadow:var(--shadow);}
-.kc-nav{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:var(--text2);cursor:pointer;padding:4px 0;border:none;background:none;font-family:inherit;white-space:nowrap;}
-.kc-nav .ic{font-size:19px;display:flex;align-items:center;justify-content:center;width:36px;height:26px;border-radius:13px;opacity:.6;filter:grayscale(.45);transition:all .2s;}
+.kc-nav{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9.5px;color:var(--text2);cursor:pointer;padding:4px 0;border:none;background:none;font-family:inherit;white-space:nowrap;}
+.kc-nav .ic{font-size:18px;display:flex;align-items:center;justify-content:center;width:32px;height:26px;border-radius:13px;opacity:.6;filter:grayscale(.45);transition:all .2s;}
 .kc-nav.on{color:var(--text);font-weight:700;}
 .kc-nav.on .ic{opacity:1;filter:none;transform:scale(1.08);background:color-mix(in srgb,var(--c) 28%,transparent);}
 .kc-chip{flex:0 0 auto;padding:7px 12px;border-radius:18px;border:1.5px solid var(--border);background:var(--card);color:var(--text2);font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;}
@@ -428,6 +428,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .upcoming-days.d3{color:var(--amber);}
 .upcoming-days.d7{color:var(--text2);}
 .upcoming-amount{font-size:12px;color:var(--text2);margin-top:1px;font-weight:600;}
+.pc{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px;box-shadow:var(--shadow);cursor:pointer;}
 .up-item{display:flex;align-items:center;gap:10px;padding:13px 14px;margin-bottom:10px;background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);min-height:72px;}
 .up-item.sev-red{border-color:var(--red);background:var(--red-bg);}
 .up-item.sev-yellow{border-color:var(--yellow-border);background:var(--yellow-bg);}
@@ -897,7 +898,7 @@ function togglePrivacy(){
   try{ localStorage.setItem('finans_privacy',privacyOn?'1':'0'); }catch(e){}
   updatePrivacyBtn(); renderAll();
 }
-const APP_VERSION='v28 · 31.10.2026';
+const APP_VERSION='v30 · 31.10.2026';
 function showVersion(){ const e=document.getElementById('appVer'); if(e) e.textContent='Sürüm '+APP_VERSION; const b=document.getElementById('backupVer'); if(b) b.textContent='Sürüm '+APP_VERSION; }
 function updatePrivacyBtn(){ const b=document.getElementById('privBtn'); if(b) b.textContent=privacyOn?'🙈':'👁'; }
 function fmt(n,dec=2){ if(privacyOn) return '₺•••••'; return '₺'+Number(n).toLocaleString('tr-TR',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
@@ -1233,29 +1234,46 @@ function renderUpcoming(mList, kList) {
 
 function renderPersonSummaries(mList,nList,kList,dList,aList){
   if(!state.persons.length) return '';
-  let html='<div class="section-title">Kişi Bazlı Özet</div>';
-  state.persons.forEach(p=>{
+  let html='<div class="section-title" style="margin:2px 2px 10px;">👥 Kişi Bazlı Özet</div>';
+  const COL=['var(--s1)','var(--s3)','var(--s7)','var(--s2)','var(--s5)','var(--s4)'];
+  state.persons.forEach((p,idx)=>{
     const pm=mList.filter(x=>x.personId===p.id);
     const pn=nList.filter(x=>x.personId===p.id);
     const pk=kList.filter(x=>x.personId===p.id);
     const pd=dList.filter(x=>x.personId===p.id);
     const pa=aList.filter(x=>x.personId===p.id);
-    let mevAna=0,mevNet=0; pm.forEach(m=>{ const c=calcMevduat(m); mevAna+=m.principal; mevNet+=c.netEl; });
-    let birikim=0,cuzdan=0; pn.forEach(n=>{ birikim+=n.birikim||0; cuzdan+=n.cuzdan||0; });
+    let mevAna=0,mevNet=0,gunluk=0; pm.forEach(m=>{ const c=calcMevduat(m); mevAna+=m.principal; mevNet+=c.netEl; if(mevduatStatus(m)!=='expired') gunluk+=c.dailyNet; });
+    let birikim=0,cuzdan=0; pn.forEach(n=>{ birikim+=n.birikim||0; cuzdan+=n.cuzdan||0; gunluk+=(n.birikim||0)*((n.faizYillik||0)/100)/365*(1-(n.vergi??15)/100); });
     let borc=0; pk.forEach(k=>{ borc+=k.borc||0; });
     let dov=0; pd.forEach(d=>{ dov+=d.amount*midRate(d.alis,d.satis); });
     let alt=0; pa.forEach(a=>{ alt+=a.amount*midRate(a.alis,a.satis); });
-    const net=(birikim+cuzdan)-borc;
-    const toplam=mevAna+net+dov+alt;
-    html+=`<div class="acc-card border-green" onclick="pickPersonFromSummary('${p.id}')">
-      <div class="acc-head">
-        <div><div class="acc-title">${p.emoji||'👤'} ${p.name}</div><div class="acc-sub">Toplam Varlık: ${fmt(toplam)}</div></div>
-        <button class="icon-btn" onclick="event.stopPropagation();deletePerson('${p.id}')">🗑</button>
+    const nakit=birikim+cuzdan, net=nakit-borc, toplam=mevAna+net+dov+alt;
+    const parts=[{l:'Mevduat',v:mevAna,c:'var(--s7)'},{l:'Nakit',v:nakit,c:'var(--s6)'},{l:'Döviz',v:dov,c:'var(--s2)'},{l:'Altın',v:alt,c:'var(--s4)'}];
+    const sum=parts.reduce((a,x)=>a+Math.max(0,x.v),0);
+    const bar=sum>0?`<div style="display:flex;height:8px;border-radius:4px;overflow:hidden;gap:2px;margin:12px 0 8px;">${parts.filter(x=>x.v>0).map(x=>`<div style="flex:${x.v};background:${x.c};min-width:3px;"></div>`).join('')}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11px;color:var(--text2);">${parts.filter(x=>x.v>0).map(x=>`<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${x.c};margin-right:4px;"></span>${x.l} ${privacyOn?'':'%'+Math.round(Math.max(0,x.v)/sum*100)}</span>`).join('')}</div>`:'';
+    const tile=(l,v,clr)=>`<div style="background:var(--bg);border-radius:12px;padding:9px 10px;"><div style="font-size:10.5px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.03em;">${l}</div><div style="font-size:14px;font-weight:700;color:${clr||'var(--text)'};margin-top:2px;">${v}</div></div>`;
+    const ac=COL[idx%COL.length];
+    html+=`<div class="pc" style="border-color:${ac};" onclick="pickPersonFromSummary('${p.id}')">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:40px;height:40px;border-radius:50%;background:color-mix(in srgb,${ac} 22%,transparent);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">${p.emoji||'👤'}</div>
+        <div style="flex:1;min-width:0;"><div style="font-size:15px;font-weight:700;color:var(--text);">${p.name}</div><div style="font-size:12px;color:var(--text2);">Toplam varlık</div></div>
+        <div style="text-align:right;"><div style="font-size:18px;font-weight:700;color:var(--text);">${fmt(toplam)}</div></div>
+        <button class="icon-btn" onclick="event.stopPropagation();deletePerson('${p.id}')" aria-label="Kişiyi sil">🗑</button>
       </div>
-      <div class="acc-row"><span class="key">Mevduat Anapara</span><span class="v">${fmt(mevAna)}</span></div>
-      <div class="acc-row"><span class="key">Mevduat Net Kazanç</span><span class="v green">${fmt(mevNet)}</span></div>
-      <div class="acc-row"><span class="key">Net Para</span><span class="v ${net>=0?'green':'red'}">${fmt(net)}</span></div>
-      <div class="acc-row"><span class="key">Döviz + Altın</span><span class="v blue">${fmt(dov+alt)}</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;background:var(--green-bg);border-radius:12px;padding:10px 12px;margin-top:12px;">
+        <span style="font-size:12.5px;font-weight:700;color:var(--text);">💸 Günlük net kazanç</span>
+        <span style="font-size:16px;font-weight:700;color:var(--green);">${fmt(gunluk)}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;">
+        ${tile('Mevduat',fmt(mevAna))}
+        ${tile('Mevduat kazancı',fmt(mevNet),'var(--green)')}
+        ${tile('Nakit',fmt(nakit))}
+        ${tile('Kredi borcu',fmt(borc),borc>0?'var(--red)':'')}
+        ${tile('Net para',fmt(net),net>=0?'var(--green)':'var(--red)')}
+        ${tile('Döviz + Altın',fmt(dov+alt),'var(--yellow-t)')}
+      </div>
+      ${bar}
     </div>`;
   });
   return html;
@@ -2435,17 +2453,26 @@ function ozetData(off){
   const s=new Date(now.getFullYear(),now.getMonth()+off,1);
   const e=new Date(now.getFullYear(),now.getMonth()+off+1,1);
   const S=s.getTime(), END=Math.min(e.getTime(),now.getTime());
-  let mev=0, nak=0;
+  let mev=0, nak=0; const rows=[]; let tamAy=0;
+  const monthDays=Math.round((e.getTime()-S)/86400000);
   filterByPerson(state.mevduat).forEach(m=>{
     const st=new Date(m.startDate).getTime(), en=st+m.tenor*86400000;
-    mev+=m.principal*(m.rate/100)/365*_ovl(st,en,S,END)*(1-(m.tax??15)/100);
+    const days=_ovl(st,en,S,END);
+    const amt=m.principal*(m.rate/100)/365*days*(1-(m.tax??15)/100);
+    mev+=amt;
+    tamAy+=m.principal*(m.rate/100)/365*(1-(m.tax??15)/100)*monthDays;
+    if(days>0) rows.push({name:m.name,bank:m.bank,days,amt,principal:m.principal,tag:''});
+    else rows.push({name:m.name,bank:m.bank,days:0,amt:0,principal:m.principal,tag:new Date(en)<new Date(S)?'vadesi bu aydan önce bitti':'bu ay başlamadı'});
   });
   let mevKapali=0;
   filterByPerson(state.mevduatGecmis||[]).forEach(g=>{
     const st=new Date(g.startDate).getTime(), en=new Date(g.accrualEnd||g.closedDate).getTime();
     const tot=(en-st)/86400000;
-    if(tot<=0){ const cd=new Date(g.closedDate).getTime(); if(cd>=S&&cd<e.getTime()) mevKapali+=g.netKazanc; }
-    else mevKapali+=g.netKazanc*_ovl(st,en,S,Math.min(e.getTime(),en))/tot;
+    let part=0;
+    if(tot<=0){ const cd=new Date(g.closedDate).getTime(); if(cd>=S&&cd<e.getTime()) part=g.netKazanc; }
+    else part=g.netKazanc*_ovl(st,en,S,Math.min(e.getTime(),en))/tot;
+    mevKapali+=part;
+    if(part>0) rows.push({name:g.name,bank:g.bank,days:tot<=0?0:_ovl(st,en,S,Math.min(e.getTime(),en)),amt:part,principal:g.principal,tag:'kapanan/yenilenen dönem'});
   });
   mev+=mevKapali;
   filterByPerson(state.nakit).forEach(n=>{
@@ -2463,7 +2490,7 @@ function ozetData(off){
     to=off===0?buildSnapshot():(inM.length?inM[inM.length-1]:null);
     if(from&&to&&from.date===to.date) from=null;
   }
-  return {s,mev,mevKapali,nak,faiz:mev+nak,payCount:pays.length,payTotal,from,to};
+  return {s,mev,mevKapali,rows,tamAy,monthDays,nak,faiz:mev+nak,payCount:pays.length,payTotal,from,to};
 }
 function ozetMonthName(off){
   const n=new Date(); return new Date(n.getFullYear(),n.getMonth()+off,1).toLocaleDateString('tr-TR',{month:'long',year:'numeric'});
@@ -2472,7 +2499,7 @@ function setOzet(off){ ozetOffset=off; renderKontrol(); }
 function ozetHtml(){
   const o=ozetData(ozetOffset);
   const row=(k,v,extra='')=>`<div class="acc-row"><span class="key">${k}</span><span class="v" ${extra}>${v}</span></div>`;
-  const delta=(a,b)=>{ const df=a-b; const c=df>0?'var(--green)':df<0?'var(--red-light)':'var(--text2)'; const ar=df>0?'▲':df<0?'▼':'–'; return `<span style="color:${c};font-weight:700;">${ar} ${fmt(Math.abs(df))}</span>`; };
+  const delta=(a,b,bad)=>{ const df=a-b; const good=bad?df<0:df>0; const c=df===0?'var(--text2)':good?'var(--green)':'var(--red)'; const ar=df>0?'▲':df<0?'▼':'–'; return `<span style="color:${c};font-weight:700;">${ar} ${fmt(Math.abs(df))}</span>`; };
   let h=`<div class="ctrl-section" style="margin-bottom:12px;">
     <div class="ctrl-section-title">📅 Aylık Özet</div>
     <div style="display:flex;gap:8px;margin-bottom:8px;">
@@ -2481,6 +2508,11 @@ function ozetHtml(){
     </div>
     <div style="font-size:13px;font-weight:700;margin-bottom:4px;text-transform:capitalize;">${ozetMonthName(ozetOffset)}</div>
     ${row('Mevduat net faiz kazancı',fmt(o.mev),'style="color:var(--green);"')}
+    ${o.rows.length?`<details style="margin:2px 0 6px;"><summary style="font-size:12.5px;font-weight:700;color:var(--blue-light);cursor:pointer;padding:6px 0;">🔍 Mevduat bazında döküm (${o.rows.length})</summary>
+      <div style="font-size:12px;color:var(--text2);margin:2px 0 6px;">Her mevduat, bu ayda yalnızca çalıştığı günler kadar sayılır.</div>
+      ${[...o.rows].sort((a,b)=>b.amt-a.amt).map(r=>`<div class="acc-row" style="align-items:flex-start;padding:7px 0;"><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;color:var(--text);">${r.name} <span style="font-weight:400;color:var(--text2);">· ${r.bank}</span></div><div style="font-size:11.5px;color:var(--text2);">Anapara ${fmt(r.principal)} · ${r.tag?r.tag:fmtNum(r.days,1)+' gün'}${r.tag&&r.days>0?' · '+fmtNum(r.days,1)+' gün':''}</div></div><div style="font-size:13px;font-weight:700;color:var(--green);">${fmt(r.amt)}</div></div>`).join('')}
+      <div style="font-size:12px;color:var(--text2);padding:6px 0;">Kıyas: bugünkü tüm mevduatlar ${o.monthDays} gün boyunca çalışsaydı ≈ <b>${fmt(o.tamAy)}</b> olurdu.</div>
+    </details>`:''}
     ${o.mevKapali>0?row('&nbsp;&nbsp;↳ kapanan mevduatlardan',fmt(o.mevKapali),'style="color:var(--text2);"'):''}
     ${row('Birikim faizi (tahmini)',fmt(o.nak),'style="color:var(--green);"')}
     ${row('<b>Toplam faiz geliri</b>',`<b>${fmt(o.faiz)}</b>`,'style="color:var(--green);"')}
@@ -2495,7 +2527,7 @@ function ozetHtml(){
       ${row('Net para',delta(o.to.netPara,o.from.netPara))}
       ${row('Döviz (TL)',delta(o.to.dovizTL,o.from.dovizTL))}
       ${row('Altın (TL)',delta(o.to.altinTL,o.from.altinTL))}
-      ${row('Kart borcu',delta(o.to.kreBorc,o.from.kreBorc))}`;
+      ${row('Kart borcu',delta(o.to.kreBorc,o.from.kreBorc,true))}`;
   } else {
     h+=`<div style="font-size:11px;color:var(--text2);margin-top:6px;">Varlık değişimi için bu ayda yeterli günlük kayıt yok. Uygulamayı açtıkça kayıtlar kendiliğinden birikir.</div>`;
   }
@@ -2528,7 +2560,8 @@ const KC_METRICS=[
   {k:'mevAnapara',l:'Mevduat',sh:'Mevduat',ic:'🏦',c:7,f:s=>s.mevAnapara,bad:false},
   {k:'nakit',l:'Nakit',sh:'Nakit',ic:'💵',c:6,f:s=>(s.birikim||0)+(s.cuzdan||0),bad:false},
   {k:'dovizTL',l:'Döviz',sh:'Döviz',ic:'💱',c:2,f:s=>s.dovizTL,bad:false},
-  {k:'altinTL',l:'Altın',sh:'Altın',ic:'🥇',c:4,f:s=>s.altinTL,bad:false}
+  {k:'altinTL',l:'Altın',sh:'Altın',ic:'🥇',c:4,f:s=>s.altinTL,bad:false},
+  {k:'gunluk',l:'Günlük Net Kazanç',sh:'Günlük',ic:'💸',c:5,f:s=>(s.mevDaily||0)+(s.nakitDaily||0),bad:false}
 ];
 let kcMetric='toplamAnapara', kcRange=90, kcTable=false, kcIdx=null;
 function kcSetMetric(m){ kcMetric=m; kcIdx=null; renderKontrol(); }
