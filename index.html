@@ -40,7 +40,7 @@
 @media(prefers-color-scheme:dark){
   :root{
     --bg:#111;--card:#1c1c1e;--text:#f0f0f0;--text2:#888;--text3:#555;
-    --border:#2c2c2e;--green-bg:#0a2e22;--red-bg:#2e0d0d;--red:#e86e6d;--red-light:#f4a0a0;--amber-bg:#2e1f00;--text3:#777;--text2:#aaa;
+    --border:#2c2c2e;--green-bg:#0a2e22;--red-bg:#2e0d0d;--red:#ffb9b4;--red-light:#ffd6d3;--amber-bg:#2e1f00;--text3:#777;--text2:#aaa;
     --blue-bg:#0d1a3a;--purple-bg:#1a0f33;--gold-bg:#2e1f00;
     --yellow:#f5d000;--yellow-t:#f5d000;--orange:#fb923c;--orange-bg:#2e1a08;--orange-t:#fdba74;--yellow-bg:#2a2400;--yellow-border:#c8a800;
   }
@@ -92,7 +92,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .setup-select option{background:#1a1a2e;color:#fff;}
 
 /* NAV TABS */
-.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);display:flex;justify-content:space-around;padding:8px 0 max(8px,env(safe-area-inset-bottom));z-index:100;max-width:480px;margin:0 auto;}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:3px solid var(--tc,#1D9E75);display:flex;justify-content:space-around;padding:8px 0 max(8px,env(safe-area-inset-bottom));z-index:100;max-width:480px;margin:0 auto;}
 .nav-item{--c:#4a9eff;flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:var(--text3);cursor:pointer;padding:4px 0;border:none;background:none;font-family:inherit;}
 .nav-item.active{color:var(--c);font-weight:700;}
 .nav-icon{font-size:21px;display:flex;align-items:center;justify-content:center;width:42px;height:28px;border-radius:14px;opacity:.6;filter:grayscale(.45);transition:all .2s;}
@@ -238,6 +238,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .ctrl-chip small{font-size:11.5px;font-weight:700;margin-left:10px;padding:2px 7px;border-radius:10px;background:var(--bg);color:var(--text2);vertical-align:1px;}
 .ctrl-chip.good{color:var(--green);}
 .ctrl-chip.bad{color:#ff8a84;}
+@media(prefers-color-scheme:dark){.ctrl-chip.bad{color:#ffc4c0;}.mev-badge.b-urgent,.mev-badge.b-expired,.alert-item-days.red{color:#4a0d0d !important;}}
 .ctrl-chip.flat{color:var(--text3);}
 .ctrl-compare{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
 .ctrl-val-box{background:var(--bg);border-radius:8px;padding:4px 8px;display:flex;justify-content:space-between;align-items:baseline;gap:6px;}
@@ -443,7 +444,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .upcoming-days.d3{color:var(--amber);}
 .upcoming-days.d7{color:var(--text2);}
 .upcoming-amount{font-size:12px;color:var(--text2);margin-top:1px;font-weight:600;}
-.pc{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px;box-shadow:var(--shadow);cursor:pointer;}
+.pc{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:10px 11px;margin-bottom:8px;box-shadow:var(--shadow);cursor:pointer;}
 .up-item{display:flex;align-items:center;gap:10px;padding:13px 14px;margin-bottom:10px;background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);min-height:72px;}
 .up-item.sev-red{border-color:var(--red);background:var(--red-bg);}
 .up-item.sev-yellow{border-color:var(--yellow-border);background:var(--yellow-bg);}
@@ -915,7 +916,7 @@ function togglePrivacy(){
   try{ localStorage.setItem('finans_privacy',privacyOn?'1':'0'); }catch(e){}
   updatePrivacyBtn(); renderAll();
 }
-const APP_VERSION='v33 · 01.11.2026';
+const APP_VERSION='v34 · 01.11.2026';
 function showVersion(){ const e=document.getElementById('appVer'); if(e) e.textContent='Sürüm '+APP_VERSION; const b=document.getElementById('backupVer'); if(b) b.textContent='Sürüm '+APP_VERSION; const l=document.getElementById('lockVer'); if(l) l.textContent='Finans Takip · Sürüm '+APP_VERSION; }
 function updatePrivacyBtn(){ const b=document.getElementById('privBtn'); if(b) b.textContent=privacyOn?'🙈':'👁'; }
 function fmt(n,dec=2){ if(privacyOn) return '₺•••••'; return '₺'+Number(n).toLocaleString('tr-TR',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
@@ -1012,10 +1013,8 @@ function applyLockTheme(){
 }
 function setLockTheme(i){ heroThemeIdx=i; try{ localStorage.setItem('finans_hero_theme',String(i)); }catch(e){} applyLockTheme(); }
 function updateThemeColor(){
-  let c;
-  const locked=document.getElementById('lockScreen')?.classList.contains('visible');
-  if(locked) c=HERO_THEMES[heroThemeIdx].a;
-  else c=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'#111111':'#f2f2f7';
+  const t=HERO_THEMES[heroThemeIdx], c=t.a;
+  document.documentElement.style.setProperty('--tc',t.a); document.documentElement.style.setProperty('--tc2',t.b);
   const m=document.querySelector('meta[name="theme-color"]'); if(m) m.setAttribute('content',c);
 }
 function setHeroTheme(i){ heroThemeIdx=i; applyLockTheme(); try{ localStorage.setItem('finans_hero_theme',String(i)); }catch(e){} renderAll(); }
@@ -1282,28 +1281,28 @@ function renderPersonSummaries(mList,nList,kList,dList,aList){
     const nakit=birikim+cuzdan, net=nakit-borc, toplam=mevAna+net+dov+alt;
     const parts=[{l:'Mevduat',v:mevAna,c:'var(--s7)'},{l:'Nakit',v:nakit,c:'var(--s6)'},{l:'Döviz',v:dov,c:'var(--s2)'},{l:'Altın',v:alt,c:'var(--s4)'}];
     const sum=parts.reduce((a,x)=>a+Math.max(0,x.v),0);
-    const bar=sum>0?`<div style="display:flex;height:8px;border-radius:4px;overflow:hidden;gap:2px;margin:12px 0 8px;">${parts.filter(x=>x.v>0).map(x=>`<div style="flex:${x.v};background:${x.c};min-width:3px;"></div>`).join('')}</div>
+    const bar=sum>0?`<div style="display:flex;height:6px;border-radius:3px;overflow:hidden;gap:2px;margin:8px 0 5px;">${parts.filter(x=>x.v>0).map(x=>`<div style="flex:${x.v};background:${x.c};min-width:3px;"></div>`).join('')}</div>
       <div style="display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11px;color:var(--text2);">${parts.filter(x=>x.v>0).map(x=>`<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${x.c};margin-right:4px;"></span>${x.l} ${privacyOn?'':'%'+Math.round(Math.max(0,x.v)/sum*100)}</span>`).join('')}</div>`:'';
-    const tile=(l,v,clr)=>`<div style="background:var(--bg);border-radius:12px;padding:9px 10px;"><div style="font-size:10.5px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.03em;">${l}</div><div style="font-size:14px;font-weight:700;color:${clr||'var(--text)'};margin-top:2px;">${v}</div></div>`;
+    const tile=(l,v,clr)=>`<div style="background:var(--bg);border-radius:9px;padding:5px 7px;min-width:0;"><div style="font-size:9.5px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${l}</div><div style="font-size:12.5px;font-weight:700;color:${clr||'var(--text)'};white-space:nowrap;">${v}</div></div>`;
     const ac=COL[idx%COL.length];
     html+=`<div class="pc" style="border-color:${ac};" onclick="pickPersonFromSummary('${p.id}')">
       <div style="display:flex;align-items:center;gap:10px;">
-        <div style="width:40px;height:40px;border-radius:50%;background:color-mix(in srgb,${ac} 22%,transparent);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">${p.emoji||'👤'}</div>
-        <div style="flex:1;min-width:0;"><div style="font-size:15px;font-weight:700;color:var(--text);">${p.name}</div><div style="font-size:12px;color:var(--text2);">Toplam varlık</div></div>
-        <div style="text-align:right;"><div style="font-size:18px;font-weight:700;color:var(--text);">${fmt(toplam)}</div></div>
+        <div style="width:34px;height:34px;border-radius:50%;background:color-mix(in srgb,${ac} 22%,transparent);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">${p.emoji||'👤'}</div>
+        <div style="flex:1;min-width:0;"><div style="font-size:15px;font-weight:700;color:var(--text);">${p.name}</div><div style="font-size:11px;color:var(--text2);">Toplam varlık</div></div>
+        <div style="text-align:right;"><div style="font-size:16px;font-weight:700;color:var(--text);">${fmt(toplam)}</div></div>
         <button class="icon-btn" onclick="event.stopPropagation();deletePerson('${p.id}')" aria-label="Kişiyi sil">🗑</button>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;background:var(--green-bg);border-radius:12px;padding:10px 12px;margin-top:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;background:var(--green-bg);border-radius:10px;padding:6px 10px;margin-top:8px;">
         <span style="font-size:12.5px;font-weight:700;color:var(--text);">💸 Günlük net kazanç</span>
-        <span style="font-size:16px;font-weight:700;color:var(--green);">${fmt(gunluk)}</span>
+        <span style="font-size:15px;font-weight:700;color:var(--green);">${fmt(gunluk)}</span>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;">
+      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-top:6px;">
         ${tile('Mevduat',fmt(mevAna))}
-        ${tile('Mevduat kazancı',fmt(mevNet),'var(--green)')}
+        ${tile('Mev. kazancı',fmt(mevNet),'var(--green)')}
         ${tile('Nakit',fmt(nakit))}
         ${tile('Kredi borcu',fmt(borc),borc>0?'var(--red)':'')}
         ${tile('Net para',fmt(net),net>=0?'var(--green)':'var(--red)')}
-        ${tile('Döviz + Altın',fmt(dov+alt),'var(--yellow-t)')}
+        ${tile('Döviz+Altın',fmt(dov+alt),'var(--yellow-t)')}
       </div>
       ${bar}
     </div>`;
